@@ -7,6 +7,11 @@ import { Provider } from "react-redux";
 import { store } from "@/redux/store";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
+import { useEffect, useState } from "react";
+import SidebarDrawer from "@/pages/Drawer";
+import { useRouter } from "next/navigation";
+import { auth } from "@/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 const inter = Inter({ subsets: ["latin"] });
 
 const metadata: Metadata = {
@@ -20,13 +25,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const persistor = persistStore(store);
+  const [userToken, setUserToken] = useState("");
+  const router: any = useRouter();
+
+  useEffect(() => {
+    const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
+    onAuthStateChanged(auth, (user: any) => {
+      if (user) {
+        setUserToken(user?.accessToken);
+        router.push(
+          sidebarText.length > 1 ? sidebarText.toLowerCase() : "/dashboard"
+        );
+      } else {
+        setUserToken("");
+        router.push("/login");
+      }
+    });
+  }, []);
 
   return (
     <html lang="en">
       <body className={inter.className}>
         <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            {children}
+          <PersistGate
+            loading={null}
+            persistor={persistor}
+            key={userToken.length}
+          >
+            {userToken ? <SidebarDrawer>{children}</SidebarDrawer> : children}
           </PersistGate>
         </Provider>
       </body>

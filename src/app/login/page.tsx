@@ -2,31 +2,27 @@
 
 import React, { FormEvent, useEffect, useState } from "react";
 import { Box } from "@mui/material";
-// import styles from "./Login.module.css";
+import Snackbar from "@mui/material/Snackbar";
+import { Alert } from "@mui/material";
+import { closeAlert } from "@/redux/slices/snackBarSlice";
 import styles from "../../pages/Login.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import { redirect, useRouter } from "next/navigation";
-import { auth } from "@/firebaseConfig";
+import { auth } from "../../firebaseConfig";
 import { signInWithEmail, storeLoginToken } from "@/redux/slices/authSlice";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import InputField from "@/components/resuseables/InputField";
 import { openAlert } from "@/redux/slices/snackBarSlice";
+import { loginSchema } from "@/schema/schema";
 
 interface IFormInput {
   email: string;
   password: string;
 }
-
-const schema = yup
-  .object({
-    email: yup.string().required("Email is required"),
-    password: yup.string().min(8).required("Password is required"),
-  })
-  .required();
 
 const Login = () => {
   const {
@@ -35,28 +31,21 @@ const Login = () => {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<any>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(loginSchema),
   });
 
   const router = useRouter();
+  const snackbar = useSelector((state: any) => state.snackbarSlice);
   const dispatch: any = useDispatch();
 
   const accessToken = useSelector((state: any) => state.authSlice.userToken);
-  console.log("accessToken", accessToken);
-
-  useEffect(() => {
-    console.log("useEffect called");
-
-    if (accessToken === null) router.push("/login");
-    // else redirect("/");
-  }, []);
 
   const handleSubmitForm = async (data: IFormInput) => {
     try {
       const reqObj = { auth, email: data.email, password: data.password };
       const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
       if (resp?.user?.accessToken) {
-        router.push("/home");
+        router.push("/dashboard");
         dispatch(
           openAlert({
             type: "success",
@@ -71,7 +60,6 @@ const Login = () => {
           message: "Invalid login credentials",
         })
       );
-
       console.log("error", error);
     }
   };
@@ -96,7 +84,7 @@ const Login = () => {
               type="email"
               register={register}
               id="email"
-              name="email"
+              name="email" //name is essentially required
               placeholder="Email"
               errorMessage={errors.email?.message}
             />
@@ -109,19 +97,50 @@ const Login = () => {
               errorMessage={errors.password?.message}
             />
 
-            <Button type="submit" variant="contained">
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
               Login
             </Button>
           </Box>
         </form>
       </Box>
+
+      {snackbar.snackbarState && (
+        <Snackbar
+          open={snackbar.snackbarState}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          autoHideDuration={1500}
+          onClose={() =>
+            dispatch(
+              closeAlert({
+                message: "",
+                type: "",
+              })
+            )
+          }
+        >
+          <Alert
+            onClose={() =>
+              dispatch(
+                closeAlert({
+                  message: "",
+                  type: "",
+                })
+              )
+            }
+            severity={snackbar.snackbarType}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.snackbarMessage}
+          </Alert>
+        </Snackbar>
+      )}
     </>
   );
 };
 
 export default Login;
 
-//FOR CALLING API WITH THUNK
+// FOR CALLING API WITH THUNK
 //   const { entities, loading, error } = useSelector(
 //     (state: any) => state.authSlice
 //   );

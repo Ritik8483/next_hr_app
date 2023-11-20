@@ -22,11 +22,13 @@ export interface AuthState {
   userToken: string | null;
   loading: "idle" | "pending" | "succeeded" | "failed";
   error: any;
+  sidebarOption: string;
 }
 const initialState: AuthState = {
   userToken: null,
   loading: "idle",
   error: null,
+  sidebarOption: "",
 };
 
 const authSlice: Slice = createSlice({
@@ -35,6 +37,14 @@ const authSlice: Slice = createSlice({
   reducers: {
     storeLoginToken: (state, { payload }) => {
       state.userToken = payload;
+    },
+    storeSidebarOption(state, action) {
+      state.sidebarOption = action.payload;
+    },
+    clearLoginDetails: (state) => {
+      state.userToken = null;
+      state.userToken = "idle";
+      state.userToken = null;
     },
   },
   extraReducers: (builder: any) => {
@@ -56,9 +66,8 @@ const authSlice: Slice = createSlice({
       });
   },
 });
-console.log("authSlice", authSlice);
 
-export const { storeLoginToken } = authSlice.actions;
+export const { storeLoginToken, clearLoginDetails,storeSidebarOption } = authSlice.actions;
 export default authSlice.reducer;
 
 //API CALLING WITH CREATE THUnK
