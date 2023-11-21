@@ -1,21 +1,38 @@
-import { Box, TextField, Typography } from "@mui/material";
-import React, { ComponentProps } from "react";
-type TInput = {
-  variant: "outline" | "contained";
-} & ComponentProps<"input">;
+import {
+  Box,
+  TextField,
+  TextFieldProps,
+  TextFieldVariants,
+  Typography,
+} from "@mui/material";
+import React from "react";
+import {
+  FieldError,
+  FieldErrorsImpl,
+  Merge,
+  UseFormRegister,
+} from "react-hook-form";
 
-const InputField = (props: any) => {
+type TInput = {
+  variant?: TextFieldVariants | undefined;
+  register?: UseFormRegister<any>;
+  label?: string;
+  errorMessage?: string | any;
+  name?: string | undefined;
+} & Omit<TextFieldProps, "variant">;
+
+const InputField = (props: TInput) => {
   const { register, name, className, label, errorMessage, ...rest } = props;
 
   return (
-    <Box width="100%">
+    <Box width="100%" display="flex" flexDirection="column"  >
       <label style={{ fontSize: "12px", color: "var(--iconGrey)" }}>
         {label}
       </label>
       <TextField
         {...(register !== undefined
           ? {
-              ...register(name, {
+              ...register(name ?? "", {
                 required: true,
               }),
             }
@@ -25,7 +42,7 @@ const InputField = (props: any) => {
         className={`${className}`}
       />
       <Typography marginTop="5px" fontSize="12px" color="red">
-        {errorMessage}
+        {errorMessage || ""}
       </Typography>
     </Box>
   );

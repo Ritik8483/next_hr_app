@@ -1,14 +1,24 @@
-import React from "react";
-import TextField from "@mui/material/TextField";
+import React, { ChangeEvent } from "react";
+import TextField, {
+  TextFieldProps,
+  TextFieldVariants,
+} from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from "@mui/icons-material/Search";
 
-const SearchField = ({ searchText, setSearchText,placeholder }: any) => {
+type TInput = {
+  searchText?: string | undefined;
+  setSearchText?: any;
+} & Omit<TextFieldProps, "variant">;
+
+const SearchField = ({ searchText, setSearchText, placeholder }: TInput) => {
   return (
     <TextField
       size="small"
       value={searchText}
-      onChange={(e: any) => setSearchText(e.target.value)}
+      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+        setSearchText(e.target.value)
+      }
       placeholder={placeholder}
       defaultValue=""
       type="text"

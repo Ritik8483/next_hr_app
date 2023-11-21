@@ -21,7 +21,7 @@ import ListItemText from "@mui/material/ListItemText";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { usePathname, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { closeAlert } from "@/redux/slices/snackBarSlice";
 import Snackbar from "@mui/material/Snackbar";
@@ -136,11 +136,19 @@ export default function SidebarDrawer({ children }: any) {
   };
 
   const handleSidebarNavigation = (text: string) => {
+    const baseUrl = process.env.LOCAL_SERVER;
+
+    const pathNameArr: any = pathname?.split("/");
     const str = text.toLowerCase();
-    setOption(text);
-    dispatch(storeSidebarOption(text));
-    localStorage.setItem("sidebarText", JSON.stringify(text));
-    router.push(str);
+
+    if (pathNameArr?.length > 2) {
+      router.push(`http://localhost:3000/${str}`);
+    } else {
+      setOption(text);
+      dispatch(storeSidebarOption(text));
+      localStorage.setItem("sidebarText", JSON.stringify(text));
+      router.push(str);
+    }
   };
 
   return (

@@ -32,26 +32,8 @@ import { openAlert } from "@/redux/slices/snackBarSlice";
 import PaginationTable from "@/components/resuseables/Pagination";
 import useDebounce from "@/components/hooks/useDebounce";
 import SearchField from "@/components/resuseables/SearchField";
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: "var(--primaryThemeBlue)",
-    color: theme.palette.common.white,
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-  },
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  "&:nth-of-type(odd)": {
-    backgroundColor: theme.palette.action.hover,
-  },
-  // hide last border
-  "&:last-child td, &:last-child th": {
-    border: 0,
-  },
-}));
+import { StyledTableCell, StyledTableRow } from "@/styles/styles";
+import { useRouter } from "next/navigation";
 
 const tableHeadings = [
   "S.No.",
@@ -64,6 +46,7 @@ const tableHeadings = [
 
 const Users = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const [openAlertBox, setOpenAlertBox] = useState<any>({
     data: {},
     state: false,
@@ -106,14 +89,14 @@ const Users = () => {
   const getData = async () => {
     if (debouncedValue.length > 0) {
       const usersRef = collection(db, "users");
-      const q = query(
+      const querySearch = query(
         usersRef,
         or(
           where("firstName", "==", debouncedValue),
           where("email", "==", debouncedValue)
         )
       );
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(querySearch);
       const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
       setTotalNoOfItems(querySnapshot?.docs?.length);
       const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
@@ -139,7 +122,6 @@ const Users = () => {
             ...doc.data(),
           };
         });
-      console.log("allUsersData", allUsersData);
 
       setUsersList(allUsersData);
     }
@@ -163,19 +145,22 @@ const Users = () => {
       })
     );
     if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-      console.log("called");
       setOffset(offset === 10 ? 10 : offset - 10);
       setPrevOffset(
         prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
       );
-      setCurrentPage(totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset ? currentPage - 1 : currentPage);
+      setCurrentPage(
+        totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
+          ? currentPage - 1
+          : currentPage
+      );
     }
     setOpenAlertBox(false);
   };
 
-  console.log("prevOffset", prevOffset);
-  console.log("totalNoOfItems", totalNoOfItems);
-  console.log("offset", offset);
+  const handleRowClick = (id: string) => {
+    router.push(`/users/${id}`);
+  };
 
   return (
     <>
@@ -227,7 +212,10 @@ const Users = () => {
               </TableHead>
               <TableBody>
                 {usersList.map((item: any, index: number) => (
-                  <StyledTableRow key={item.id}>
+                  <StyledTableRow
+                    onClick={() => handleRowClick(item.id)}
+                    key={item.id}
+                  >
                     <StyledTableCell component="th" scope="row">
                       {currentPage === 1 ? index + 1 : prevOffset + index + 1}
                     </StyledTableCell>
@@ -244,7 +232,10 @@ const Users = () => {
                       {item.designation}
                     </StyledTableCell>
 
-                    <StyledTableCell align="right">
+                    <StyledTableCell
+                      align="right"
+                      onClick={(e:React.MouseEvent) => e.stopPropagation()}
+                    >
                       <Box display="flex" gap="15px" justifyContent="flex-end">
                         <EditIcon
                           onClick={() => handleEdit(item)}
@@ -294,8 +285,8 @@ const Users = () => {
       {openAddUserModal && (
         <AddUserModal
           open={openAddUserModal}
+          onClose={() => setOpenAddUserModal(false)}
           userDetail={userDetail}
-          setOpenAddUserModal={setOpenAddUserModal}
         />
       )}
     </>

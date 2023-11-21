@@ -18,14 +18,10 @@ import { useDispatch } from "react-redux";
 interface AddUserModalInterface {
   open: boolean;
   userDetail: any;
-  setOpenAddUserModal: (value: boolean) => void;
+  onClose: () => void;
 }
 
-const AddUserModal = ({
-  open,
-  setOpenAddUserModal,
-  userDetail,
-}: AddUserModalInterface) => {
+const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
   const dispatch = useDispatch();
   const {
     register,
@@ -59,7 +55,7 @@ const AddUserModal = ({
             message: "User updated successfully!",
           })
         );
-        setOpenAddUserModal(false);
+        onClose();
       }
     } else {
       await setDoc(doc(db, "users", Date.now().toString(36)), {
@@ -74,7 +70,7 @@ const AddUserModal = ({
           message: "User added successfully!",
         })
       );
-      setOpenAddUserModal(false);
+      onClose();
     }
   };
 
@@ -82,15 +78,12 @@ const AddUserModal = ({
     <>
       <Modal
         open={open}
-        onClose={() => setOpenAddUserModal(false)}
+        onClose={onClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
         <Box sx={modalStyles}>
-          <CloseIcon
-            onClick={() => setOpenAddUserModal(false)}
-            sx={modalCrossStyle}
-          />
+          <CloseIcon onClick={onClose} sx={modalCrossStyle} />
           <Typography variant="h5" padding="10px 20px">
             {userDetail.id ? "Update" : "Add"} User
           </Typography>
@@ -151,7 +144,7 @@ const AddUserModal = ({
                   color="error"
                   sx={{ textTransform: "capitalize" }}
                   variant="contained"
-                  onClick={() => setOpenAddUserModal(false)}
+                  onClick={onClose}
                   text="Cancel"
                 />
                 <Buttons

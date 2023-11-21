@@ -4,7 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:development": "env-cmd -f .env.local next dev",
+    "dev:production": "env-cmd -f .env.prod next dev",
     "build": "next build",
+    "build:development": "env-cmd -f .env.local next build",
+    "build:production": "env-cmd -f .env.prod next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -15,6 +19,7 @@
     "@mui/icons-material": "^5.14.16",
     "@mui/material": "^5.14.17",
     "@reduxjs/toolkit": "^1.9.7",
+    "env-cmd": "^10.1.0",
     "firebase": "^10.5.2",
     "next": "14.0.1",
     "react": "^18",

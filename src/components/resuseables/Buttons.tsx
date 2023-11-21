@@ -1,17 +1,23 @@
-import { Button } from "@mui/material";
-import React from "react";
+import {
+  Button,
+  ButtonProps,
+  ButtonTypeMap,
+  ExtendButtonBase,
+} from "@mui/material";
+import React, { ComponentProps } from "react";
 
-const btnStyle = {
-  textTransform: "capitalize"
-};
-const Buttons = (props: any) => {
+type TCustomButton = ButtonProps & {
+  text: string | undefined;
+} & ComponentProps<"button">;
+
+const Buttons = (props: TCustomButton) => {
   const { text, sx, variant, ...rest } = props;
   return (
     <>
       <Button
         {...rest}
         variant={variant || "contained"}
-        sx={{ ...sx, ...btnStyle }}
+        sx={{ ...sx, textTransform: "capitalize" }}
       >
         {text}
       </Button>

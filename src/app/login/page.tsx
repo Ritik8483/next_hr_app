@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useEffect, useState } from "react";
+import React from "react";
 import { Box } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { Alert } from "@mui/material";
@@ -8,16 +8,16 @@ import { closeAlert } from "@/redux/slices/snackBarSlice";
 import styles from "../../pages/Login.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { auth } from "../../firebaseConfig";
-import { signInWithEmail, storeLoginToken } from "@/redux/slices/authSlice";
+import { signInWithEmail } from "@/redux/slices/authSlice";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import InputField from "@/components/resuseables/InputField";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import { loginSchema } from "@/schema/schema";
+import { AppDispatch } from "@/redux/store";
+import Buttons from "@/components/resuseables/Buttons";
 
 interface IFormInput {
   email: string;
@@ -36,7 +36,7 @@ const Login = () => {
 
   const router = useRouter();
   const snackbar = useSelector((state: any) => state.snackbarSlice);
-  const dispatch: any = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
 
   const accessToken = useSelector((state: any) => state.authSlice.userToken);
 
@@ -96,10 +96,12 @@ const Login = () => {
               placeholder="Password"
               errorMessage={errors.password?.message}
             />
-
-            <Button type="submit" variant="contained" disabled={isSubmitting}>
-              Login
-            </Button>
+            <Buttons
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting}
+              text="Login"
+            />
           </Box>
         </form>
       </Box>
