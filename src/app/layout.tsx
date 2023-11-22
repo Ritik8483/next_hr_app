@@ -34,7 +34,11 @@ export default function RootLayout({
       if (user) {
         setUserToken(user?.accessToken);
         router.push(
-          sidebarText.length > 1 ? sidebarText.toLowerCase() : "/dashboard"
+          sidebarText === "Generate Feedback"
+            ? "/generate-feedback"
+            : sidebarText.length > 1
+            ? sidebarText.toLowerCase()
+            : "/dashboard"
         );
       } else {
         setUserToken("");

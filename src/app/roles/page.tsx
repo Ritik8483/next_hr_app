@@ -62,7 +62,7 @@ const Roles = () => {
     setOpenRolesModal(true);
   };
 
-  const getUsersData = async () => {
+  const getRolesData = async () => {
     if (debouncedValue.length > 0) {
       const usersRef = collection(db, "roles");
       const querySearch = query(
@@ -101,7 +101,7 @@ const Roles = () => {
     }
   };
   useEffect(() => {
-    getUsersData();
+    getRolesData();
   }, [openRolesModal, openAlertBox, currentPage, debouncedValue]);
 
   const handleEdit = (item: any) => {

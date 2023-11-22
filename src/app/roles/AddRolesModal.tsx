@@ -162,15 +162,15 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
               register={register}
               type="text"
               name="teamName"
-              placeholder="Enter team Name"
+              placeholder="Enter team name"
               label="Team Name"
               errorMessage={errors.teamName?.message}
             />
             <InputField
               register={register}
-              type="text"
+              type="email"
               name="teamEmail"
-              placeholder="Enter team Name"
+              placeholder="Enter team name"
               label="Team Email"
               errorMessage={errors.teamEmail?.message}
             />

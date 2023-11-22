@@ -35,7 +35,13 @@ import { auth } from "@/firebaseConfig";
 import Router from "next/router";
 
 const drawerWidth = 240;
-
+const drawerOptions = [
+  "Dashboard",
+  "Generate Feedback",
+  "Users",
+  "Roles",
+  "Feedbacks",
+];
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
   open?: boolean;
 }>(({ theme, open }) => ({
@@ -143,11 +149,14 @@ export default function SidebarDrawer({ children }: any) {
 
     if (pathNameArr?.length > 2) {
       router.push(`http://localhost:3000/${str}`);
+      setOption(text);
+      localStorage.setItem("sidebarText", JSON.stringify(text));
+      dispatch(storeSidebarOption(text));
     } else {
       setOption(text);
       dispatch(storeSidebarOption(text));
       localStorage.setItem("sidebarText", JSON.stringify(text));
-      router.push(str);
+      router.push(text === "Generate Feedback" ? "generate-feedback" : str);
     }
   };
 
@@ -202,7 +211,7 @@ export default function SidebarDrawer({ children }: any) {
             </IconButton>
           </DrawerHeader>
           <List>
-            {["Dashboard", "Users", "Roles", "Feedbacks"].map((text, index) => (
+            {drawerOptions.map((text, index) => (
               <ListItem
                 onClick={() => handleSidebarNavigation(text)}
                 sx={{

@@ -26,4 +26,28 @@ const addRolesSchema = yup
   })
   .required();
 
-export { loginSchema, addUserSchema ,addRolesSchema};
+const addFeedbacksSchema = yup
+  .object({
+    feedbackName: yup.string().required("Feedback name is required"),
+    feedbackDescription: yup
+      .string()
+      .required("Feedback description is required"),
+  })
+  .required();
+
+const generateFeedbackSchema = yup
+  .object({
+    feedbackName: yup.string().required("Feedback name is required"),
+    feedbackDescription: yup
+      .string()
+      .required("Feedback description is required"),
+  })
+  .required();
+
+export {
+  loginSchema,
+  addUserSchema,
+  addRolesSchema,
+  addFeedbacksSchema,
+  generateFeedbackSchema,
+};
