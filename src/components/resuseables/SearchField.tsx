@@ -9,12 +9,14 @@ import SearchIcon from "@mui/icons-material/Search";
 type TInput = {
   searchText?: string | undefined;
   setSearchText?: any;
+  onKeyDown?:any
 } & Omit<TextFieldProps, "variant">;
 
-const SearchField = ({ searchText, setSearchText, placeholder }: TInput) => {
+const SearchField = ({ searchText, setSearchText, placeholder,onKeyDown }: TInput) => {
   return (
     <TextField
       size="small"
+      onKeyDown={onKeyDown}
       value={searchText}
       onChange={(e: ChangeEvent<HTMLInputElement>) =>
         setSearchText(e.target.value)

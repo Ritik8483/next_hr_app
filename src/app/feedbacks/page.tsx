@@ -37,6 +37,7 @@ import { openAlert } from "@/redux/slices/snackBarSlice";
 
 const tableHeadings = [
   "S.No.",
+  "Feedback Type",
   "Feedback Name",
   "Feedback Description",
   "Actions",
@@ -117,8 +118,8 @@ const Feedbacks = () => {
   };
 
   const handleEdit = (item: any) => {
-    setOpenFeedbackModal(true);
     setFeedbackDetail(item);
+    setOpenFeedbackModal(true);
   };
 
   const handleDeleteFeedback = async () => {
@@ -199,6 +200,9 @@ const Feedbacks = () => {
                   >
                     <StyledTableCell component="th" scope="row">
                       {currentPage === 1 ? index + 1 : prevOffset + index + 1}
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
+                      {item.feedback_parameter_type}
                     </StyledTableCell>
                     <StyledTableCell align="center">
                       {item.feedbackName}

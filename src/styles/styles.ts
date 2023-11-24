@@ -42,4 +42,22 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-export { modalStyles, modalCrossStyle, StyledTableCell, StyledTableRow };
+const searchFieldMenuItem = {
+  width: "100%",
+  "&:hover": {
+    cursor: "pointer",
+    backgroundColor: "#fff",
+  },
+  "&:focus": {
+    cursor: "pointer",
+    backgroundColor: "#fff",
+  },
+};
+
+export {
+  modalStyles,
+  modalCrossStyle,
+  StyledTableCell,
+  StyledTableRow,
+  searchFieldMenuItem,
+};

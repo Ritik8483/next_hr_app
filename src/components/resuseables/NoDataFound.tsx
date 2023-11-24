@@ -1,11 +1,11 @@
 import React from "react";
 import { Typography, Box } from "@mui/material";
 
-const NoDataFound = ({ text }: any) => {
+const NoDataFound = ({ text, height }: any) => {
   return (
     <Box
       width="100%"
-      height="calc(100vh - 180px)"
+      height={height ? height : "calc(100vh - 180px)"}
       display="flex"
       justifyContent="center"
       alignItems="center"

@@ -1,41 +1,44 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "@mui/material/Modal";
-import { modalCrossStyle, modalStyles } from "@/styles/styles";
+import {
+  modalCrossStyle,
+  modalStyles,
+  searchFieldMenuItem,
+} from "@/styles/styles";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   Checkbox,
   Divider,
-  IconButton,
   InputLabel,
   ListItemText,
   ListSubheader,
   MenuItem,
+  TextField,
 } from "@mui/material";
-import emailjs from "@emailjs/browser";
-import InputField from "@/components/resuseables/InputField";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { addFeedbacksSchema, generateFeedbackSchema } from "@/schema/schema";
 import Buttons from "@/components/resuseables/Buttons";
 import OutlinedInput from "@mui/material/OutlinedInput";
-import styles from "../../pages/Login.module.css";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
+  or,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import SearchField from "@/components/resuseables/SearchField";
 import useDebounce from "@/components/hooks/useDebounce";
+import NoDataFound from "@/components/resuseables/NoDataFound";
 
 interface GenerateFeedbackInterface {
   feedbackFormModal: boolean;
@@ -54,36 +57,31 @@ const MenuProps = {
   },
 };
 
-const feedbackTypes = ["Employees to Manager", "Manager to Employees"];
-const ETM = "Employees to Manager"; //employees are giving feedback to manager about his performance
-const MTE = "Manager to Employees";
+const feedbackTypes = ["Employees to Manager", "Manager to Employees"]; //employees are giving feedback to manager about his performance
 
 const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const { onClose, feedbackFormModal, feedbackFormDetail } = props;
   const dispatch = useDispatch();
-  const formRef: any = useRef();
-  const [feedbackFormType, setFeedbackFormType] = useState("");
+
+  const [feedbackFormType, setFeedbackFormType] = useState(
+    feedbackFormDetail?.feedback_type || ""
+  );
   const [usersList, setUsersList] = useState([]);
-  const [reviewType, setReviewType] = useState<any>("");
-  const [reviewerType, setReviewerType] = useState([]);
+  const [reviewType, setReviewType] = useState<any>(
+    feedbackFormDetail?.review || ""
+  );
+  const [reviewerType, setReviewerType] = useState<any>([]);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [feedbackParametersArr, setFeedbackParametersArr] = useState([]);
-  const [recieverInputEmails, setRecieverInputEmails] = useState("");
+  const [validate, setValidate] = useState(false);
   const [rolesList, setRolesList] = useState([]);
-  const [usersArr, setUsersArr] = useState<any>([]);
   const [feedbacksList, setFeedbacksList] = useState([]);
-  const [searchText, setSearchText] = useState<string>("");
-
-  const debouncedValue = useDebounce(searchText, 500);
-
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting, isSubmitted },
-  } = useForm<any>({
-    resolver: yupResolver(generateFeedbackSchema),
-    defaultValues: feedbackFormDetail,
-  });
+  const [searchReviewText, setSearchReviewText] = useState<string>("");
+  const [searchReviewerText, setSearchReviewerText] = useState<string>("");
+  const [searchFeedbacks, setSearchFeedbacks] = useState<string>("");
+  const debouncedReview = useDebounce(searchReviewText, 500);
+  const debouncedReviewer = useDebounce(searchReviewerText, 500);
+  const debouncedFeedbacks = useDebounce(searchFeedbacks, 500);
 
   const handleFeedbackTypeChange = (event: SelectChangeEvent) => {
     setFeedbackFormType(event.target.value);
@@ -117,125 +115,189 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       personNames.push(item);
     }
     setReviewerType(personNames);
-    // if (personNames.length) setValidateUsers(false);
-    // else setValidateUsers(true);
   };
 
   const getUsersData = async () => {
-    const querySnapshot: any = await getDocs(collection(db, "users"));
-    const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    });
-    setUsersList(allUsersData);
+    let reviewerArrOfUsers: any = [];
+    if (debouncedReview.length > 0 || debouncedReviewer.length > 0) {
+      const usersRef = collection(db, "users");
+      const querySearch = query(
+        usersRef,
+        or(where("firstName", "==", debouncedReviewer || debouncedReview))
+      );
 
-    const queryRoles: any = await getDocs(collection(db, "roles"));
-    const allRolesData = queryRoles?.docs?.reverse()?.map((doc: any) => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    });
-    setRolesList(allRolesData);
+      const querySnapshot = await getDocs(querySearch);
 
-    const queryFeedbacks: any = await getDocs(collection(db, "feedbacks"));
-    const allFeedbacksData = queryFeedbacks?.docs
-      ?.reverse()
-      ?.map((doc: any) => {
+      const usersArr: any = querySnapshot?.docs?.map((doc: any) => {
         return {
           id: doc.id,
           ...doc.data(),
         };
       });
-    setFeedbacksList(allFeedbacksData);
+      setUsersList(usersArr);
+    } else {
+      const querySnapshot: any = await getDocs(collection(db, "users"));
+      const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+      const resp = allUsersData?.filter((item: any) =>
+        feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.email)
+      );
+
+      if (feedbackFormDetail?.id && !reviewerType.length) {
+        reviewerArrOfUsers = resp;
+        setReviewerType([...resp]);
+      }
+      setUsersList(allUsersData);
+    }
+
+    if (debouncedReviewer.length > 0) {
+      const usersRef = collection(db, "roles");
+      const querySearch = query(
+        usersRef,
+        or(where("teamName", "==", debouncedReviewer))
+      );
+      const querySnapshot = await getDocs(querySearch);
+      const allRolesData: any = querySnapshot?.docs?.map((doc: any) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+      setRolesList(allRolesData);
+    } else {
+      const queryRoles: any = await getDocs(collection(db, "roles"));
+      const allRolesData = queryRoles?.docs?.reverse()?.map((doc: any) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+
+      const response = allRolesData?.filter((item: any) =>
+        feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.teamEmail)
+      );
+
+      if (feedbackFormDetail?.id && !reviewerType.length) {
+
+        setReviewerType([...reviewerArrOfUsers, ...response]);
+        reviewerArrOfUsers = [];
+      }
+
+      setRolesList(allRolesData);
+    }
+
+    if (debouncedFeedbacks.length > 0) {
+      const usersRef = collection(db, "feedbacks");
+      const querySearch = query(
+        usersRef,
+        or(where("feedbackName", "==", debouncedFeedbacks))
+      );
+      const querySnapshot = await getDocs(querySearch);
+      const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+      setFeedbacksList(feedbacksArr);
+    } else {
+      const queryFeedbacks: any = await getDocs(collection(db, "feedbacks"));
+      const allFeedbacksData = queryFeedbacks?.docs
+        ?.reverse()
+        ?.map((doc: any) => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        });
+      const resp = allFeedbacksData?.filter((item: any) =>
+        feedbackFormDetail?.feedback_parameters?.includes(item.id)
+      );
+      if (feedbackFormDetail?.id && !feedbackParametersArr.length) {
+        setFeedbackParametersArr(resp);
+      }
+      setFeedbacksList(allFeedbacksData);
+    }
   };
 
   useEffect(() => {
     getUsersData();
-  }, []);
+  }, [debouncedReview, debouncedReviewer, debouncedFeedbacks]);
 
   const handleSubmitForm = async (e: any) => {
     e.preventDefault();
-    console.log("formRef.current", formRef.current);
-
-    console.log("Review", reviewType);
-    console.log("Select feedback type = ", feedbackFormType);
+    if (
+      reviewType === "" ||
+      feedbackFormType === "" ||
+      !feedbackParametersArr.length ||
+      !reviewerType.length
+    )
+      return;
+    setIsSubmitting(true);
 
     const feedParameters = feedbackParametersArr?.map((it: any) => it.id);
-    console.log("Feedback Parameters", feedParameters);
 
+    //Extracting Emails of the Reviewer
     const reviewerUsersEmails = reviewerType?.map((it: any) => it.email);
-
     const reviewerTeamEmails = reviewerType?.map((it: any) => it.teamEmail);
-
     const allEmails = [...reviewerTeamEmails, ...reviewerUsersEmails];
     const filteredEmails = allEmails.filter((it: any) => it !== undefined);
-    console.log("filteredEmils", filteredEmails.toString());
-    setRecieverInputEmails(filteredEmails.toString());
 
-    // if (feedbackFormDetail.id) {
-    //   const userId = doc(db, "feedbacks", feedbackFormDetail.id);
-    //   await updateDoc(userId, data);
-    //   dispatch(
-    //     openAlert({
-    //       type: "success",
-    //       message: "Feedback updated successfully!",
-    //     })
-    //   );
-    //   onClose();
-    // } else {
-    //   await setDoc(doc(db, "feedbacks", Date.now().toString(36)), data);
-    //   dispatch(
-    //     openAlert({
-    //       type: "success",
-    //       message: "Feedback added successfully!",
-    //     })
-    //   );
-    //   onClose();
-    // }
+    //Extracting user ids of Reviewer
+    const reviewerTeamIds = reviewerType?.map((item: any) => {
+      const arrTeams: any =
+        item.teamName && item?.teamUsers?.map((it: any) => it.id);
+      return arrTeams;
+    });
+    const teamsIdsArr = reviewerTeamIds.filter(
+      (it: string) => it !== undefined
+    );
+    const teamsArr = teamsIdsArr.flat();
 
-    const resp = emailjs
-      .sendForm(
-        "service_45awfi4",
-        "template_7qrcsmx",
-        formRef.current,
-        "jJk8j_-FYjBGKH0Kv"
-      )
-      .then(
-        (result) => {
-          console.log(result.text);
-        },
-        (error) => {
-          console.log(error.text);
-        }
+    const reviewerUsersIds = reviewerType?.map(
+      (item: any) => item.firstName && item?.id
+    );
+    const usersArr = reviewerUsersIds.filter((it: string) => it !== undefined);
+
+    const allUsersArr = [...new Set([...teamsArr, ...usersArr])];
+
+    const feedbackFormData = {
+      feedback_type: feedbackFormType,
+      review: reviewType,
+      reviewer: allUsersArr,
+      feedback_parameters: feedParameters,
+      reviewerEmails: filteredEmails.toString(),
+    };
+
+    if (feedbackFormDetail.id) {
+
+      const userId = doc(db, "feedback_form", feedbackFormDetail.id);
+      await updateDoc(userId, feedbackFormData);
+      dispatch(
+        openAlert({
+          type: "success",
+          message: "Feedback form updated successfully!",
+        })
+      );
+      onClose();
+    } else {
+      await setDoc(
+        doc(db, "feedback_form", Date.now().toString(36)),
+        feedbackFormData
       );
 
-    console.log("resp", resp);
-    //////////////////////////////////////
-
-    // const reviewerTeamIds = reviewerType?.map((item: any) => {
-    //   const arrTeams: any =
-    //     item.teamName && item?.teamUsers?.map((it: any) => it.id);
-    //   return arrTeams;
-    // });
-    // const teamsIdsArr = reviewerTeamIds.filter(
-    //   (it: string) => it !== undefined
-    // );
-    // const teamsArr = teamsIdsArr.flat();
-
-    // const reviewerUsersIds = reviewerType?.map(
-    //   (item: any) => item.firstName && item?.id
-    // );
-    // const usersArr = reviewerUsersIds.filter((it: string) => it !== undefined);
-
-    // const allUsersArr = [...new Set([...teamsArr, ...usersArr])];
-    // console.log("Reviewer", allUsersArr);
-
-    ///////////////////////////////////////
-
-    
+      dispatch(
+        openAlert({
+          type: "success",
+          message: "Feedback form created successfully!",
+        })
+      );
+      onClose();
+    }
   };
 
   const teamIds = reviewerType?.map((it: any) => it.id);
@@ -243,7 +305,23 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     (it: any) => it.id
   );
 
-  // hari@yopmail.com,ritik.chauhan@quokkalabs.com
+  const handleSubmitClick = () => {
+    if (
+      reviewType === "" ||
+      feedbackFormType === "" ||
+      !feedbackParametersArr.length ||
+      !reviewerType.length
+    )
+      setValidate(true);
+    else setValidate(false);
+  };
+
+  const handleOnKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Escape") {
+      e.stopPropagation();
+    }
+  };
+
 
   return (
     <Modal
@@ -255,27 +333,18 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       <Box sx={modalStyles}>
         <CloseIcon onClick={onClose} sx={modalCrossStyle} />
         <Typography variant="h5" padding="10px 20px">
-          {feedbackFormDetail.id ? "Update" : "Generate"} Feedback Form
+          {feedbackFormDetail.id ? "Update" : "Create"} Feedback Form
         </Typography>
         <Divider />
 
-        {/* <form ref={formRef} onSubmit={handleSubmitForm}>
-          <label>Name</label>
-          <input type="text" name="user_name" />
-          <label>Reply Email</label>
-          <input type="email" name="reply_to" />
-          <label>To Email</label>
-          <input name="to_email" />
-          <label>Message</label>
-          <textarea name="message" />
-          <input type="submit" value="Send" />
-        </form> */}
-
-        <form ref={formRef} onSubmit={handleSubmitForm}>
+        <form
+          style={{ overflow: "auto", height: "393px" }}
+          onSubmit={handleSubmitForm}
+        >
           <Box display="flex" flexDirection="column" gap="20px" padding="20px">
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
-                Select feedback type
+                Select feedback for
               </InputLabel>
               <Select
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
@@ -284,7 +353,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 input={<OutlinedInput />}
                 renderValue={(selected) => {
                   if (selected.length === 0) {
-                    return <>Select Feedback Type</>;
+                    return <>Select feedback for</>;
                   }
 
                   return selected;
@@ -298,13 +367,13 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                   </MenuItem>
                 ))}
               </Select>
-              {/* {validateUsers && (
-      <Typography
-        sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
-      >
-        Please select a user
-      </Typography>
-    )} */}
+              {validate && !feedbackFormType && (
+                <Typography
+                  sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                >
+                  Please select feedback for
+                </Typography>
+              )}
             </Box>
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
@@ -314,6 +383,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 disabled={!feedbackFormType}
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
                 value={reviewType}
+                onClose={() => setSearchReviewText("")}
+                onOpen={() => setSearchReviewText("")}
                 displayEmpty
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
@@ -321,42 +392,61 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     return <>Review</>;
                   }
 
-                  return selected.firstName + " " + selected.lastName;
+                  return (
+                    selected.firstName +
+                    " " +
+                    selected.lastName +
+                    " " +
+                    "(" +
+                    selected.designation +
+                    ")"
+                  );
                 }}
-                // MenuProps={MenuProps}
                 MenuProps={{
-                  ...MenuProps,
                   autoFocus: false,
+                  ...MenuProps,
                 }}
-                // onChange={handleReviewChange}
               >
-                <MenuItem
-                  onClick={(e: any) => e.stopPropagation()}
-                  autoFocus={false}
-                >
-                  <SearchField
-                    setSearchText={setSearchText}
-                    searchText={searchText}
-                    placeholder="Search"
-                  />
-                </MenuItem>
-                {usersList?.map((it: any) => (
+                <ListSubheader sx={{ width: "100%", padding: "0" }}>
                   <MenuItem
-                    onClick={() => handleReviewChange(it)}
-                    key={it.id}
-                    value={it}
+                    sx={searchFieldMenuItem}
+                    onClick={(e: any) => e.stopPropagation()}
                   >
-                    {it.firstName + " " + it.lastName}
+                    <SearchField
+                      setSearchText={setSearchReviewText}
+                      searchText={searchReviewText}
+                      placeholder="Search"
+                      onKeyDown={(e: React.KeyboardEvent) => handleOnKeyDown(e)}
+                    />
                   </MenuItem>
-                ))}
+                </ListSubheader>
+                {usersList?.length ? (
+                  usersList?.map((it: any) => (
+                    <MenuItem
+                      onClick={() => handleReviewChange(it)}
+                      key={it.id}
+                      value={it}
+                    >
+                      {it.firstName +
+                        " " +
+                        it.lastName +
+                        " " +
+                        "(" +
+                        it.designation +
+                        ")"}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <NoDataFound height="auto" text="No data Found" />
+                )}
               </Select>
-              {/* {validateUsers && (
-      <Typography
-        sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
-      >
-        Please select a user
-      </Typography>
-    )} */}
+              {validate && !reviewType && (
+                <Typography
+                  sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                >
+                  Please select a person to review
+                </Typography>
+              )}
             </Box>
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
@@ -367,9 +457,18 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
                 value={reviewerType}
                 multiple
+                onClose={() => {
+                  setSearchReviewText("");
+                  setSearchReviewerText("");
+                }}
+                onOpen={() => {
+                  setSearchReviewText("");
+                  setSearchReviewerText("");
+                }}
                 displayEmpty
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
+
                   if (selected.length === 0) {
                     return <>Reviewer</>;
                   }
@@ -387,43 +486,66 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
                   return filtered.join(", ");
                 }}
-                MenuProps={MenuProps}
-                // onChange={}
+                MenuProps={{
+                  autoFocus: false,
+                  ...MenuProps,
+                }}
               >
+                <ListSubheader sx={{ width: "100%", padding: "0" }}>
+                  <MenuItem
+                    sx={searchFieldMenuItem}
+                    onClick={(e: any) => e.stopPropagation()}
+                  >
+                    <SearchField
+                      setSearchText={setSearchReviewerText}
+                      searchText={searchReviewerText}
+                      placeholder="Search"
+                      onKeyDown={(e: React.KeyboardEvent) => handleOnKeyDown(e)}
+                    />
+                  </MenuItem>
+                </ListSubheader>
                 <ListSubheader>Team Names</ListSubheader>
-                {rolesList?.map((it: any) => {
-                  return (
-                    <MenuItem key={it.id} value={it}>
-                      <Checkbox
-                        defaultChecked={teamIds?.includes(it.id)}
-                        onClick={() => handleReviewerChange(it)}
-                      />
-                      <ListItemText primary={it.teamName} />
-                    </MenuItem>
-                  );
-                })}
+                {rolesList?.length ? (
+                  rolesList?.map((it: any) => {
+                    return (
+                      <MenuItem key={it.id} value={it}>
+                        <Checkbox
+                          defaultChecked={teamIds?.includes(it.id)}
+                          onClick={() => handleReviewerChange(it)}
+                        />
+                        <ListItemText primary={it.teamName} />
+                      </MenuItem>
+                    );
+                  })
+                ) : (
+                  <NoDataFound height="auto" text="No data Found" />
+                )}
                 <ListSubheader>Employees</ListSubheader>
-                {usersList?.map((it: any) => {
-                  return (
-                    <MenuItem key={it.id} value={it}>
-                      <Checkbox
-                        defaultChecked={teamIds?.includes(it.id)}
-                        onClick={() => handleReviewerChange(it)}
-                      />
-                      <ListItemText
-                        primary={it.firstName + " " + it.lastName}
-                      />
-                    </MenuItem>
-                  );
-                })}
+                {usersList.length ? (
+                  usersList?.map((it: any) => {
+                    return (
+                      <MenuItem key={it.id} value={it}>
+                        <Checkbox
+                          defaultChecked={teamIds?.includes(it.id)}
+                          onClick={() => handleReviewerChange(it)}
+                        />
+                        <ListItemText
+                          primary={it.firstName + " " + it.lastName}
+                        />
+                      </MenuItem>
+                    );
+                  })
+                ) : (
+                  <NoDataFound height="auto" text="No data Found" />
+                )}
               </Select>
-              {/* {validateUsers && (
-      <Typography
-        sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
-      >
-        Please select a user
-      </Typography>
-    )} */}
+              {validate && !reviewerType.length && (
+                <Typography
+                  sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                >
+                  Please select the reviewer
+                </Typography>
+              )}
             </Box>
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
@@ -435,6 +557,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 value={feedbackParametersArr}
                 displayEmpty
                 multiple
+                onClose={() => setSearchFeedbacks("")}
+                onOpen={() => setSearchFeedbacks("")}
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
                   if (selected.length === 0 || selected === undefined) {
@@ -451,44 +575,54 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                   autoFocus: false,
                 }}
               >
-                {feedbacksList?.map((it: any) => {
-                  return (
-                    <MenuItem key={it.id} value={it}>
-                      <Checkbox
-                        defaultChecked={feedbackParametersArray?.includes(
-                          it.id
-                        )}
-                        onClick={() => handleFeedbackChange(it)}
-                      />
-                      <ListItemText primary={it.feedbackName} />
-                    </MenuItem>
-                  );
-                })}
+                <ListSubheader sx={{ width: "100%", padding: "0" }}>
+                  <MenuItem
+                    sx={searchFieldMenuItem}
+                    onClick={(e: any) => e.stopPropagation()}
+                  >
+                    <SearchField
+                      setSearchText={setSearchFeedbacks}
+                      searchText={searchFeedbacks}
+                      placeholder="Search"
+                      onKeyDown={(e: React.KeyboardEvent) => handleOnKeyDown(e)}
+                    />
+                  </MenuItem>
+                </ListSubheader>
+                {feedbacksList?.length ? (
+                  feedbacksList?.map((it: any) => {
+                    return (
+                      <MenuItem key={it.id} value={it}>
+                        <Checkbox
+                          defaultChecked={feedbackParametersArray?.includes(
+                            it.id
+                          )}
+                          onClick={() => handleFeedbackChange(it)}
+                        />
+                        <ListItemText
+                          primary={
+                            it.feedbackName +
+                            " " +
+                            "(" +
+                            it.feedback_parameter_type +
+                            ")"
+                          }
+                        />
+                      </MenuItem>
+                    );
+                  })
+                ) : (
+                  <NoDataFound height="auto" text="No data Found" />
+                )}
               </Select>
-              {/* {validateUsers && (
-      <Typography
-        sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
-      >
-        Please select a user
-      </Typography>
-    )} */}
+              {validate && !feedbackParametersArr.length && (
+                <Typography
+                  sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                >
+                  Please select the feedback parameters
+                </Typography>
+              )}
             </Box>
           </Box>
-          <input
-            name="to_email"
-            value={recieverInputEmails}
-            style={{ visibility: "hidden" }}
-          />
-          <input
-            name="message"
-            value="dummy message text"
-            style={{ visibility: "hidden" }}
-          />
-          <input
-            name="user_name"
-            value={reviewType.firstName + " " + reviewType.lastName}
-            style={{ visibility: "hidden" }}
-          />
           <Box
             display="flex"
             justifyContent="flex-end"
@@ -506,19 +640,19 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
               text="Cancel"
             />
             <Buttons
-              // disabled={isSubmitting}
+              disabled={isSubmitting}
               sx={{ textTransform: "capitalize" }}
               variant="contained"
-              text="Generate"
-              // text={
-              //   feedbackFormDetail.id && isSubmitting
-              //     ? "Updating..."
-              //     : feedbackFormDetail.id
-              //     ? "Update"
-              //     : isSubmitting
-              //     ? "Generating..."
-              //     : "Generate"
-              // }
+              onClick={handleSubmitClick}
+              text={
+                feedbackFormDetail.id && isSubmitting
+                  ? "Updating..."
+                  : feedbackFormDetail.id
+                  ? "Update"
+                  : isSubmitting
+                  ? "Creating..."
+                  : "Create"
+              }
               type="submit"
             />
           </Box>

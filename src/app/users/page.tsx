@@ -69,18 +69,6 @@ const Users = () => {
     });
   };
 
-  // const getData = async () => {
-  //   const docRef = doc(db, "users", ":r4:");
-  //   const docSnap = await getDoc(docRef);
-
-  //   if (docSnap.exists()) {
-  //     console.log("Document data:", docSnap.data());
-  //   } else {
-  //     // docSnap.data() will be undefined in this case
-  //     console.log("No such document!");
-  //   }
-  // };
-
   const handleAddUser = () => {
     setUserDetail({});
     setOpenAddUserModal(true);
