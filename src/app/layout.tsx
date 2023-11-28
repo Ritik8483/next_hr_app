@@ -9,7 +9,12 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { useEffect, useState } from "react";
 import SidebarDrawer from "@/pages/Drawer";
-import { useRouter } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { auth } from "@/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 const inter = Inter({ subsets: ["latin"] });
@@ -27,6 +32,8 @@ export default function RootLayout({
   const persistor = persistStore(store);
   const [userToken, setUserToken] = useState("");
   const router: any = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
 
   useEffect(() => {
     const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
@@ -42,7 +49,14 @@ export default function RootLayout({
         );
       } else {
         setUserToken("");
-        router.push("/login");
+        // router.push("/user-login");
+        router.push(
+          pathname === "/form"
+            ? "/form?id=lpch8gd7"
+            : pathname === "/user-login"
+            ? "/user-login"
+            : "/login"
+        );
       }
     });
   }, []);

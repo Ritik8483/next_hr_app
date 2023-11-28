@@ -40,7 +40,7 @@ import AlertBox from "@/components/resuseables/AlertBox";
 const tableHeadings = ["S.No.", "Feedback Type", "Person to review", "Actions"];
 
 const GenerateFeedback = () => {
-  const router = useRouter();
+  const router: any = useRouter();
   const dispatch = useDispatch();
   const formRef: any = useRef<HTMLInputElement[] | null>([]);
   const [searchText, setSearchText] = useState<string>("");
@@ -66,8 +66,8 @@ const GenerateFeedback = () => {
     setFeedbackFormModal(true);
   };
 
-  const handleRowClick = (id: string) => {
-    router.push(`generate-feedback/${id}`);
+  const handleRowClick = (item: any) => {
+    router.push(`/generate-feedback/${item.id}`);
   };
 
   const getFeedbacksData = async () => {
@@ -227,7 +227,7 @@ const GenerateFeedback = () => {
               <TableBody>
                 {feedbackFormList.map((item: any, index: number) => (
                   <StyledTableRow
-                    onClick={() => handleRowClick(item.id)}
+                    onClick={() => handleRowClick(item)}
                     key={item.id}
                   >
                     <StyledTableCell component="th" scope="row">
@@ -265,7 +265,7 @@ const GenerateFeedback = () => {
                           />
                           <input
                             name="message"
-                            defaultValue={item.id}
+                            defaultValue={`http://localhost:3000/${item.id}/user-login`}
                             style={{ visibility: "hidden" }}
                           />
                           <input

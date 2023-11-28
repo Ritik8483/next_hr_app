@@ -146,9 +146,12 @@ export default function SidebarDrawer({ children }: any) {
 
     const pathNameArr: any = pathname?.split("/");
     const str = text.toLowerCase();
-
     if (pathNameArr?.length > 2) {
-      router.push(`http://localhost:3000/${str}`);
+      router.push(
+        `http://localhost:3000/${
+          str === "generate feedback" ? "generate-feedback" : str
+        }`
+      );
       setOption(text);
       localStorage.setItem("sidebarText", JSON.stringify(text));
       dispatch(storeSidebarOption(text));

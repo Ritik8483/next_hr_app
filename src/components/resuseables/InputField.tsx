@@ -25,7 +25,7 @@ const InputField = (props: TInput) => {
   const { register, name, className, label, errorMessage, ...rest } = props;
 
   return (
-    <Box width="100%" display="flex" flexDirection="column"  >
+    <Box width="100%" display="flex" flexDirection="column">
       <label style={{ fontSize: "12px", color: "var(--iconGrey)" }}>
         {label}
       </label>
@@ -37,6 +37,7 @@ const InputField = (props: TInput) => {
               }),
             }
           : null)}
+        name={name}
         variant="outlined"
         {...rest}
         className={`${className}`}
