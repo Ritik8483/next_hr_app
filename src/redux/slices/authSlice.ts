@@ -20,12 +20,14 @@ export const signInWithEmail = createAsyncThunk(
 
 export interface AuthState {
   userToken: string | null;
+  userLoginDetails: any;
   loading: "idle" | "pending" | "succeeded" | "failed";
   error: any;
   sidebarOption: string;
 }
 const initialState: AuthState = {
   userToken: null,
+  userLoginDetails:null,
   loading: "idle",
   error: null,
   sidebarOption: "",
@@ -37,6 +39,9 @@ const authSlice: Slice = createSlice({
   reducers: {
     storeLoginToken: (state, { payload }) => {
       state.userToken = payload;
+    },
+    storeUsersLoginToken: (state, { payload }) => {
+      state.userLoginDetails = payload;
     },
     storeSidebarOption(state, action) {
       state.sidebarOption = action.payload;
@@ -67,7 +72,7 @@ const authSlice: Slice = createSlice({
   },
 });
 
-export const { storeLoginToken, clearLoginDetails,storeSidebarOption } = authSlice.actions;
+export const { storeLoginToken, clearLoginDetails,storeSidebarOption,storeUsersLoginToken } = authSlice.actions;
 export default authSlice.reducer;
 
 //API CALLING WITH CREATE THUnK

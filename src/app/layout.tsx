@@ -10,7 +10,6 @@ import { persistStore } from "redux-persist";
 import { useEffect, useState } from "react";
 import SidebarDrawer from "@/pages/Drawer";
 import {
-  useParams,
   usePathname,
   useRouter,
   useSearchParams,
@@ -35,26 +34,24 @@ export default function RootLayout({
   const pathname = usePathname();
   const params = useSearchParams();
 
+  const paramsId = params?.get("id");
+
   useEffect(() => {
     const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
+    
     onAuthStateChanged(auth, (user: any) => {
-      if (user) {
+      if (user && user.email === "ritik.chauhan@quokkalabs.com") {
         setUserToken(user?.accessToken);
         router.push(
-          sidebarText === "Generate Feedback"
-            ? "/generate-feedback"
-            : sidebarText.length > 1
-            ? sidebarText.toLowerCase()
-            : "/dashboard"
+          sidebarText.length > 1 ? sidebarText.toLowerCase() : "/dashboard"
         );
       } else {
         setUserToken("");
-        // router.push("/user-login");
         router.push(
           pathname === "/form"
-            ? "/form?id=lpch8gd7"
+            ? `/form?id=${paramsId}`
             : pathname === "/user-login"
-            ? "/user-login"
+            ? `/user-login?id=${paramsId}`
             : "/login"
         );
       }

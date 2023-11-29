@@ -43,6 +43,8 @@ const Login = () => {
   const handleSubmitForm = async (data: IFormInput) => {
     try {
       const reqObj = { auth, email: data.email, password: data.password };
+      console.log(reqObj);
+      
       const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
       if (resp?.user?.accessToken) {
         router.push("/dashboard");

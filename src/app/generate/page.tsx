@@ -67,7 +67,7 @@ const GenerateFeedback = () => {
   };
 
   const handleRowClick = (item: any) => {
-    router.push(`/generate-feedback/${item.id}`);
+    router.push(`/generate/${item.id}`);
   };
 
   const getFeedbacksData = async () => {
@@ -241,13 +241,14 @@ const GenerateFeedback = () => {
                     </StyledTableCell>
                     <StyledTableCell
                       align="right"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                       <Box
                         display="flex"
                         gap="15px"
                         justifyContent="flex-end"
                         alignItems="center"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+
                       >
                         <form
                           ref={(el: any) => {
@@ -265,7 +266,7 @@ const GenerateFeedback = () => {
                           />
                           <input
                             name="message"
-                            defaultValue={`http://localhost:3000/${item.id}/user-login`}
+                            defaultValue={`http://localhost:3000/user-login?id=${item.id}`}
                             style={{ visibility: "hidden" }}
                           />
                           <input

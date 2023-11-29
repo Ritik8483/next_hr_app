@@ -9,7 +9,6 @@ import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -21,7 +20,7 @@ import ListItemText from "@mui/material/ListItemText";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { redirect, usePathname, useRouter } from "next/navigation";
+import {  usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { closeAlert } from "@/redux/slices/snackBarSlice";
 import Snackbar from "@mui/material/Snackbar";
@@ -37,7 +36,7 @@ import Router from "next/router";
 const drawerWidth = 240;
 const drawerOptions = [
   "Dashboard",
-  "Generate Feedback",
+  "Generate",
   "Users",
   "Roles",
   "Feedbacks",
@@ -142,14 +141,11 @@ export default function SidebarDrawer({ children }: any) {
   };
 
   const handleSidebarNavigation = (text: string) => {
-    const baseUrl = process.env.LOCAL_SERVER;
-
-    const pathNameArr: any = pathname?.split("/");
+    const pathNameArr: any = pathname?.split("/");    
     const str = text.toLowerCase();
     if (pathNameArr?.length > 2) {
       router.push(
-        `http://localhost:3000/${
-          str === "generate feedback" ? "generate-feedback" : str
+        `http://localhost:3000/${str
         }`
       );
       setOption(text);
@@ -159,7 +155,7 @@ export default function SidebarDrawer({ children }: any) {
       setOption(text);
       dispatch(storeSidebarOption(text));
       localStorage.setItem("sidebarText", JSON.stringify(text));
-      router.push(text === "Generate Feedback" ? "generate-feedback" : str);
+      router.push(str);
     }
   };
 

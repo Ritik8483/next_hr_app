@@ -7,12 +7,19 @@ import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import { db } from "@/firebaseConfig";
 import { Box, Typography } from "@mui/material";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
+import { useDispatch, useSelector } from "react-redux";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { storeUsersLoginToken } from "@/redux/slices/authSlice";
 
 const FillFeedbackForm = () => {
   const searchParams: any = useSearchParams();
+  const router = useRouter();
+  const auth: any = getAuth();
+  const dispatch = useDispatch();
+
   const [feedbackParametersArr, setFeedbackParametersArr] = useState<any>([]);
   const [validate, setValidate] = useState(false);
   const [formQueDetails, setFormQueDetails] = useState<any>({});
@@ -20,6 +27,10 @@ const FillFeedbackForm = () => {
     Array<{ id: string; score?: number; description: string }>
   >([]);
   const feedbackId = searchParams.get("id");
+
+  const feedbackReviewerEmail = useSelector(
+    (state: any) => state.authSlice.userLoginDetails
+  );
 
   const getAllFeedbackParameters = async (item: string) => {
     const docRef = doc(db, "feedbacks", item);
@@ -32,6 +43,17 @@ const FillFeedbackForm = () => {
       };
     }
   };
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (user: any) => {
+      if (user && user.email !== "ritik.chauhan@quokkalabs.com") {
+        router.push(`/form?id=${feedbackId}`);
+      } else {
+        router.push("/user-login");
+        dispatch(storeUsersLoginToken(null));
+      }
+    });
+  }, []);
 
   const getFeedbacksData = async () => {
     try {
@@ -49,6 +71,7 @@ const FillFeedbackForm = () => {
               score: "",
               description: "",
               type: item.feedback_parameter_type,
+              feedbackName: item.feedbackName,
             };
           });
           setFormData(obj);
@@ -83,11 +106,36 @@ const FillFeedbackForm = () => {
 
     try {
       const userId = doc(db, "feedback_form", feedbackId);
-      await updateDoc(userId, {
+      const payload = {
         ...formQueDetails,
-        form_response: formData,
-      });
+        responses: formQueDetails?.responses?.length
+          ? formQueDetails?.responses?.map((it: any) => {
+              if (it === feedbackReviewerEmail?.id) {
+                return {
+                  ...feedbackReviewerEmail,
+                  form_response: formData,
+                };
+              } else return it;
+            })
+          : formQueDetails?.reviewer?.map((it: any) => {
+              if (it === feedbackReviewerEmail?.id) {
+                return {
+                  ...feedbackReviewerEmail,
+                  form_response: formData,
+                };
+              } else return it;
+            }),
+      };
+      await updateDoc(userId, payload);
+      dispatch(storeUsersLoginToken(null));
       alert("Form Submitted Successfully");
+      signOut(auth)
+        .then(() => {
+          router.push(`/user-login?id=${feedbackId}`);
+        })
+        .catch((error: any) => {
+          console.log("error", error);
+        });
     } catch (error) {
       console.log(error);
     }
