@@ -225,83 +225,92 @@ const GenerateFeedback = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {feedbackFormList.map((item: any, index: number) => (
-                  <StyledTableRow
-                    onClick={() => handleRowClick(item)}
-                    key={item.id}
-                  >
-                    <StyledTableCell component="th" scope="row">
-                      {currentPage === 1 ? index + 1 : prevOffset + index + 1}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.feedback_type}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.review.firstName + " " + item.review.lastName}
-                    </StyledTableCell>
-                    <StyledTableCell
-                      align="right"
+                {feedbackFormList.map((item: any, index: number) => {
+                  return (
+                    <StyledTableRow
+                      onClick={() => handleRowClick(item)}
+                      key={item.id}
                     >
-                      <Box
-                        display="flex"
-                        gap="15px"
-                        justifyContent="flex-end"
-                        alignItems="center"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-
-                      >
-                        <form
-                          ref={(el: any) => {
-                            if (formRef?.current) {
-                              formRef.current.push(el);
-                            }
-                          }}
-                          key={item.id}
-                          onSubmit={(e: any) => handleSubmit(e, index)}
+                      <StyledTableCell component="th" scope="row">
+                        {currentPage === 1 ? index + 1 : prevOffset + index + 1}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {item.feedback_type}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {Array.isArray(item.review)
+                          ? item.review
+                              ?.map(
+                                (it: any) =>
+                                  it.teamName ||
+                                  it.firstName + " " + it.lastName
+                              )
+                              .toString()
+                          : item.review.firstName + " " + item.review.lastName}
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        <Box
+                          display="flex"
+                          gap="15px"
+                          justifyContent="flex-end"
+                          alignItems="center"
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
-                          <input
-                            name="to_email"
-                            defaultValue={item.reviewerEmails}
-                            style={{ visibility: "hidden" }}
+                          <form
+                            ref={(el: any) => {
+                              if (formRef?.current) {
+                                formRef.current.push(el);
+                              }
+                            }}
+                            key={item.id}
+                            onSubmit={(e: any) => handleSubmit(e, index)}
+                          >
+                            <input
+                              name="to_email"
+                              defaultValue={item.reviewerEmails}
+                              style={{ visibility: "hidden" }}
+                            />
+                            <input
+                              name="message"
+                              defaultValue={`http://localhost:3000/user-login?id=${item.id}`}
+                              style={{ visibility: "hidden" }}
+                            />
+                            <input
+                              name="user_name"
+                              defaultValue={
+                                item.review.firstName +
+                                " " +
+                                item.review.lastName
+                              }
+                              style={{ visibility: "hidden" }}
+                            />
+                            <Buttons
+                              variant="contained"
+                              disabled={publishFormId === index && isSubmitting}
+                              text={
+                                publishFormId === index && isSubmitting
+                                  ? "Publishing..."
+                                  : "Publish"
+                              }
+                              size="small"
+                              type="submit"
+                            />
+                          </form>
+                          <EditIcon
+                            onClick={() => handleEdit(item)}
+                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
                           />
-                          <input
-                            name="message"
-                            defaultValue={`http://localhost:3000/user-login?id=${item.id}`}
-                            style={{ visibility: "hidden" }}
-                          />
-                          <input
-                            name="user_name"
-                            defaultValue={
-                              item.review.firstName + " " + item.review.lastName
+                          <DeleteIcon
+                            onClick={() =>
+                              setOpenAlertBox({ data: item, state: true })
                             }
-                            style={{ visibility: "hidden" }}
+                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
                           />
-                          <Buttons
-                            variant="contained"
-                            disabled={publishFormId === index && isSubmitting}
-                            text={
-                              publishFormId === index && isSubmitting
-                                ? "Publishing..."
-                                : "Publish"
-                            }
-                            size="small"
-                            type="submit"
-                          />
-                        </form>
-                        <EditIcon
-                          onClick={() => handleEdit(item)}
-                          sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                        />
-                        <DeleteIcon
-                          onClick={() =>
-                            setOpenAlertBox({ data: item, state: true })
-                          }
-                          sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                        />
-                      </Box>
-                    </StyledTableCell>
-                  </StyledTableRow>
-                ))}
+                        </Box>
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  );
+                })}
               </TableBody>
             </Table>
 
@@ -337,9 +346,15 @@ const GenerateFeedback = () => {
           confirmText="Yes Delete"
           mainHeaderText="Are you sure you want to delete feedback form for "
           userName={
-            openAlertBox.data.review?.firstName +
-            " " +
-            openAlertBox.data.review?.lastName
+            Array.isArray(openAlertBox.data?.review)
+              ? openAlertBox.data?.review
+                  ?.map(
+                    (it: any) => it.teamName || it.firstName + " " + it.lastName
+                  )
+                  .toString()
+              : openAlertBox.data?.review?.firstName +
+                " " +
+                openAlertBox.data?.review?.lastName
           }
           onClose={handleClose}
           handleClick={handleDeleteFeedbackForm}

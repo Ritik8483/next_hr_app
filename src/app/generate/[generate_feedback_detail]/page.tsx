@@ -97,6 +97,7 @@ const GenerateFeedbackDetail = () => {
   const handleGenerte = () => {
     router.push("/generate");
   };
+
   const breadcrumbs = [
     <Typography
       sx={{ cursor: "pointer" }}
@@ -107,14 +108,16 @@ const GenerateFeedbackDetail = () => {
       Generate
     </Typography>,
     <Typography sx={{ cursor: "pointer" }} color="var(--primaryThemeBlue)">
-      {feedbackResponseList?.review
-        ? feedbackResponseList?.review?.firstName +
+      {Array.isArray(feedbackResponseList?.review)
+        ? feedbackResponseList?.review
+            ?.map((it: any) => it.teamName || it.firstName + " " + it.lastName)
+            .toString()
+        : feedbackResponseList?.review?.firstName +
           " " +
-          feedbackResponseList?.review?.lastName
-        : "_"}
+          feedbackResponseList?.review?.lastName}
     </Typography>,
   ];
-  
+
   return (
     <>
       <Breadcrumbs

@@ -39,6 +39,7 @@ import { openAlert } from "@/redux/slices/snackBarSlice";
 import SearchField from "@/components/resuseables/SearchField";
 import useDebounce from "@/components/hooks/useDebounce";
 import NoDataFound from "@/components/resuseables/NoDataFound";
+import { ETM, MTE } from "@/constants/constant";
 
 interface GenerateFeedbackInterface {
   feedbackFormModal: boolean;
@@ -67,9 +68,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     feedbackFormDetail?.feedback_type || ""
   );
   const [usersList, setUsersList] = useState([]);
-  const [reviewType, setReviewType] = useState<any>(
-    feedbackFormDetail?.review || ""
-  );
   const [reviewerType, setReviewerType] = useState<any>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [feedbackParametersArr, setFeedbackParametersArr] = useState([]);
@@ -78,6 +76,10 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const [feedbacksList, setFeedbacksList] = useState([]);
   const [searchReviewText, setSearchReviewText] = useState<string>("");
   const [searchReviewerText, setSearchReviewerText] = useState<string>("");
+  const [reviewType, setReviewType] = useState<any>(
+    feedbackFormDetail?.review || ""
+  );
+  const [multipleReviewType, setMultipleReviewType] = useState<any>([]);
   const [searchFeedbacks, setSearchFeedbacks] = useState<string>("");
   const debouncedReview = useDebounce(searchReviewText, 500);
   const debouncedReviewer = useDebounce(searchReviewerText, 500);
@@ -85,6 +87,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
   const handleFeedbackTypeChange = (event: SelectChangeEvent) => {
     setFeedbackFormType(event.target.value);
+    setMultipleReviewType([]);
+    setReviewType("");
   };
 
   const handleReviewChange = (item: any) => {
@@ -117,8 +121,25 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     setReviewerType(personNames);
   };
 
+  const handleMultiReviewChange = (item: any) => {
+    const personNames: any = [...multipleReviewType];
+    const indexOfItem = personNames.findIndex((it: any) => it.id === item.id);
+
+    if (indexOfItem !== -1) {
+      personNames.splice(indexOfItem, 1);
+    } else {
+      personNames.push(item);
+    }
+    setMultipleReviewType(personNames);
+  };
+
   const getUsersData = async () => {
     let reviewerArrOfUsers: any = [];
+    let multipleReviewArr: any = [];
+    const filteredReviews: any =
+      feedbackFormDetail?.feedback_type === MTE &&
+      feedbackFormDetail?.review?.map((it: any) => it.email || it.teamEmail);
+
     if (debouncedReview.length > 0 || debouncedReviewer.length > 0) {
       const usersRef = collection(db, "users");
       const querySearch = query(
@@ -147,18 +168,34 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
         feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.email)
       );
 
+
       if (feedbackFormDetail?.id && !reviewerType.length) {
         reviewerArrOfUsers = resp;
         setReviewerType([...resp]);
       }
+      if (
+        feedbackFormDetail?.id &&
+        feedbackFormDetail?.feedback_type === MTE &&
+        !multipleReviewType.length
+      ) {
+        const response = allUsersData?.filter((item: any) =>
+          filteredReviews?.includes(item.email)
+        );
+
+        multipleReviewArr = response;
+        setMultipleReviewType([...response]);
+      }
       setUsersList(allUsersData);
     }
 
-    if (debouncedReviewer.length > 0) {
+    if (
+      (feedbackFormType === MTE && debouncedReview.length > 0) ||
+      debouncedReviewer.length > 0
+    ) {
       const usersRef = collection(db, "roles");
       const querySearch = query(
         usersRef,
-        or(where("teamName", "==", debouncedReviewer))
+        or(where("teamName", "==", debouncedReview || debouncedReviewer))
       );
       const querySnapshot = await getDocs(querySearch);
       const allRolesData: any = querySnapshot?.docs?.map((doc: any) => {
@@ -182,11 +219,22 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       );
 
       if (feedbackFormDetail?.id && !reviewerType.length) {
-
         setReviewerType([...reviewerArrOfUsers, ...response]);
         reviewerArrOfUsers = [];
       }
 
+      if (
+        feedbackFormDetail?.id &&
+        feedbackFormDetail?.feedback_type === MTE &&
+        !multipleReviewType.length
+      ) {
+        const responseReviews = allRolesData?.filter((item: any) =>
+          filteredReviews?.includes(item.teamEmail)
+        );
+
+        setMultipleReviewType([...multipleReviewArr, ...responseReviews]);
+        multipleReviewArr = [];
+      }
       setRolesList(allRolesData);
     }
 
@@ -231,7 +279,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const handleSubmitForm = async (e: any) => {
     e.preventDefault();
     if (
-      reviewType === "" ||
+      (feedbackFormType === ETM && reviewType === "") ||
+      (feedbackFormType === MTE && !multipleReviewType.length) ||
       feedbackFormType === "" ||
       !feedbackParametersArr.length ||
       !reviewerType.length
@@ -267,14 +316,13 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
     const feedbackFormData = {
       feedback_type: feedbackFormType,
-      review: reviewType,
+      review: feedbackFormType === ETM ? reviewType : multipleReviewType,
       reviewer: allUsersArr,
       feedback_parameters: feedParameters,
       reviewerEmails: filteredEmails.toString(),
     };
 
     if (feedbackFormDetail.id) {
-
       const userId = doc(db, "feedback_form", feedbackFormDetail.id);
       await updateDoc(userId, feedbackFormData);
       dispatch(
@@ -304,10 +352,12 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const feedbackParametersArray = feedbackParametersArr?.map(
     (it: any) => it.id
   );
+  const reviewTeamIds = multipleReviewType?.map((it: any) => it.id);
 
   const handleSubmitClick = () => {
     if (
-      reviewType === "" ||
+      (feedbackFormType === ETM && reviewType === "") ||
+      (feedbackFormType === MTE && !multipleReviewType.length) ||
       feedbackFormType === "" ||
       !feedbackParametersArr.length ||
       !reviewerType.length
@@ -321,7 +371,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       e.stopPropagation();
     }
   };
-
 
   return (
     <Modal
@@ -382,25 +431,43 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
               <Select
                 disabled={!feedbackFormType}
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
-                value={reviewType}
+                value={
+                  feedbackFormType === MTE ? multipleReviewType : reviewType
+                }
                 onClose={() => setSearchReviewText("")}
                 onOpen={() => setSearchReviewText("")}
                 displayEmpty
+                multiple={feedbackFormType === MTE ? true : false}
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
                   if (selected.length === 0 || selected === undefined) {
                     return <>Review</>;
                   }
+                  if (feedbackFormType === MTE) {
+                    const teamNames = selected?.map((it: any) => it.teamName);
+                    const usersNames = selected?.map(
+                      (it: any) => it.firstName + " " + it.lastName
+                    );
+                    const finalArr = teamNames.concat(usersNames);
+                    const filteredArr = finalArr.filter(
+                      (it: any) => it !== "undefined undefined"
+                    );
+                    const filtered = filteredArr.filter(
+                      (it: string) => it !== undefined
+                    );
 
-                  return (
-                    selected.firstName +
-                    " " +
-                    selected.lastName +
-                    " " +
-                    "(" +
-                    selected.designation +
-                    ")"
-                  );
+                    return filtered.join(", ");
+                  } else {
+                    return (
+                      selected.firstName +
+                      " " +
+                      selected.lastName +
+                      " " +
+                      "(" +
+                      selected.designation +
+                      ")"
+                    );
+                  }
                 }}
                 MenuProps={{
                   autoFocus: false,
@@ -420,33 +487,76 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     />
                   </MenuItem>
                 </ListSubheader>
-                {usersList?.length ? (
-                  usersList?.map((it: any) => (
-                    <MenuItem
-                      onClick={() => handleReviewChange(it)}
-                      key={it.id}
-                      value={it}
-                    >
-                      {it.firstName +
-                        " " +
-                        it.lastName +
-                        " " +
-                        "(" +
-                        it.designation +
-                        ")"}
-                    </MenuItem>
-                  ))
-                ) : (
-                  <NoDataFound height="auto" text="No data Found" />
+                {feedbackFormType === ETM &&
+                  (usersList?.length ? (
+                    usersList?.map((it: any) => (
+                      <MenuItem
+                        onClick={() => handleReviewChange(it)}
+                        key={it.id}
+                        value={it}
+                      >
+                        {it.firstName +
+                          " " +
+                          it.lastName +
+                          " " +
+                          "(" +
+                          it.designation +
+                          ")"}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <NoDataFound height="auto" text="No data Found" />
+                  ))}
+
+                {feedbackFormType === MTE && (
+                  <>
+                    <ListSubheader>Team Names</ListSubheader>
+                    {rolesList?.length ? (
+                      rolesList?.map((it: any) => {
+                        return (
+                          <MenuItem key={it.id} value={it}>
+                            <Checkbox
+                              defaultChecked={reviewTeamIds?.includes(it.id)}
+                              onClick={() => handleMultiReviewChange(it)}
+                            />
+                            <ListItemText primary={it.teamName} />
+                          </MenuItem>
+                        );
+                      })
+                    ) : (
+                      <NoDataFound height="auto" text="No data Found" />
+                    )}
+                    <ListSubheader>Employees</ListSubheader>
+                    {usersList.length ? (
+                      usersList?.map((it: any) => {
+                        return (
+                          <MenuItem key={it.id} value={it}>
+                            <Checkbox
+                              defaultChecked={reviewTeamIds?.includes(it.id)}
+                              onClick={() => handleMultiReviewChange(it)}
+                            />
+                            <ListItemText
+                              primary={it.firstName + " " + it.lastName}
+                            />
+                          </MenuItem>
+                        );
+                      })
+                    ) : (
+                      <NoDataFound height="auto" text="No data Found" />
+                    )}
+                  </>
                 )}
               </Select>
-              {validate && !reviewType && (
-                <Typography
-                  sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
-                >
-                  Please select a person to review
-                </Typography>
-              )}
+              {validate &&
+                (feedbackFormType === MTE
+                  ? !multipleReviewType?.length
+                  : !reviewType) && (
+                  <Typography
+                    sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                  >
+                    Please select a person to review
+                  </Typography>
+                )}
             </Box>
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
@@ -468,7 +578,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 displayEmpty
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
-
                   if (selected.length === 0) {
                     return <>Reviewer</>;
                   }
@@ -663,3 +772,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 };
 
 export default GenerateFeedbackModal;
+
+// ETM same Flow_Block
+// MTE review teams/employee and employer shashank

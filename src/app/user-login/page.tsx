@@ -52,7 +52,7 @@ const UserLogin = () => {
   const params = useSearchParams();
 
   const [togglePage, settogglePage] = useState("signup");
-  const [activeState, setActiveState] = useState<boolean>(false);
+  // const [activeState, setActiveState] = useState<boolean>(false);
   const [usersEmail, setUsersEmail] = useState<any>([]);
   const [feedbackResponses, setFeedbackResponses] = useState<any>({});
   const [allUsersDetails, setAllUsersDetails] = useState<any>([]);
@@ -245,7 +245,7 @@ const UserLogin = () => {
             })
           );
         } else {
-          setActiveState(!activeState)
+          // setActiveState(!activeState)
           dispatch(
             openAlert({
               type: "error",
@@ -283,7 +283,7 @@ const UserLogin = () => {
         router.push(`/user-login?id=${paramsId}`);
       }
     });
-  }, [allUsersDetails?.length,activeState]);
+  }, [allUsersDetails?.length]);
 
   const handleForgotForm = async (data: any) => {
     const querySnapshot: any = await getDocs(collection(db, "signup_users"));
