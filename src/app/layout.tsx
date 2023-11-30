@@ -9,11 +9,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { useEffect, useState } from "react";
 import SidebarDrawer from "@/pages/Drawer";
-import {
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { auth } from "@/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 const inter = Inter({ subsets: ["latin"] });
@@ -38,7 +34,7 @@ export default function RootLayout({
 
   useEffect(() => {
     const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
-    
+
     onAuthStateChanged(auth, (user: any) => {
       if (user && user.email === "ritik.chauhan@quokkalabs.com") {
         setUserToken(user?.accessToken);

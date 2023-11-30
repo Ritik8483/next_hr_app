@@ -231,7 +231,7 @@ const FillFeedbackForm = () => {
                             </Typography>
                           )}
                         <InputField
-                          type="number"
+                          type="text"
                           onChange={(e: any) =>
                             handleDescChange(item.id, e.target.value)
                           }
@@ -263,7 +263,7 @@ const FillFeedbackForm = () => {
                     ) : item.feedback_parameter_type === "Description" ? (
                       <>
                         <InputField
-                          type="number"
+                          type="text"
                           sx={{ padding: "10px 0" }}
                           size="small"
                           value={

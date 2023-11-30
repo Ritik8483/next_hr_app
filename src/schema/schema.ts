@@ -20,6 +20,12 @@ const userLoginSchema = yup
   })
   .required();
 
+const userForgotPasswordSchema = yup
+  .object({
+    email: yup.string().required("Email is required"),
+  })
+  .required();
+
 const addUserSchema = yup
   .object({
     firstName: yup.string().required("First name is required"),
@@ -61,4 +67,5 @@ export {
   addRolesSchema,
   addFeedbacksSchema,
   generateFeedbackSchema,
+  userForgotPasswordSchema,
 };

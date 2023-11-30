@@ -22,44 +22,6 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { Breadcrumbs, Chip } from "@mui/material";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 
-function createData(
-  name: string,
-  calories: number,
-  fat: number,
-  carbs: number,
-  protein: number,
-  price: number
-) {
-  return {
-    name,
-    calories,
-    fat,
-    carbs,
-    protein,
-    price,
-    history: [
-      {
-        date: "2020-01-05",
-        customerId: "11091700",
-        amount: 3,
-      },
-      {
-        date: "2020-01-02",
-        customerId: "Anonymous",
-        amount: 1,
-      },
-    ],
-  };
-}
-
-const rows = [
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0, 3.99),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3, 4.99),
-  createData("Eclair", 262, 16.0, 24, 6.0, 3.79),
-  createData("Cupcake", 305, 3.7, 67, 4.3, 2.5),
-  createData("Gingerbread", 356, 16.0, 49, 3.9, 1.5),
-];
-
 const tableHeadings = [
   "S.No.",
   "First Name",
@@ -73,7 +35,7 @@ const tableSubHeadings = [
   "Feedback Name",
   "Score",
   "Description",
-  "Type",
+  "Feedback Type",
 ];
 
 const GenerateFeedbackDetail = () => {
@@ -105,14 +67,17 @@ const GenerateFeedbackDetail = () => {
           docSnap.data()?.reviewer?.includes(item.id)
         );
         const doneUsers = filteredNames.filter(
-          (item: any) => !docSnap?.data()?.responses.includes(item.id)
+          (item: any) => !docSnap?.data()?.responses?.includes(item.id)
         );
-        setDoneReviewers(doneUsers);
         const pendingUsers = filteredNames.filter((item: any) =>
-          docSnap?.data()?.responses.includes(item.id)
+          docSnap?.data()?.responses?.includes(item.id)
         );
-        setPendingReviewers(pendingUsers);
 
+        if (docSnap?.data()?.responses?.length) {
+          setDoneReviewers(doneUsers);
+
+          setPendingReviewers(pendingUsers);
+        }
       } else {
         console.log("No such document!");
       }
@@ -149,7 +114,7 @@ const GenerateFeedbackDetail = () => {
         : "_"}
     </Typography>,
   ];
-
+  
   return (
     <>
       <Breadcrumbs
@@ -209,13 +174,15 @@ const GenerateFeedbackDetail = () => {
         </Box>
       </Box>
 
-      {!feedbackResponseList?.responses?.length ? (
+      {Object.keys(feedbackResponseList).length === 0 ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
+          sx={{ marginTop: "20px" }}
           height="calc(100vh - 180px)"
         />
-      ) : feedbackResponseList?.responses?.length ? (
+      ) : feedbackResponseList.hasOwnProperty("responses") &&
+        feedbackResponseList?.responses?.length ? (
         <>
           <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
             <Table aria-label="collapsible table">
@@ -233,111 +200,108 @@ const GenerateFeedbackDetail = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {feedbackResponseList?.responses?.map(
-                  (row: any, index: number) =>
-                    row?.firstName ? (
-                      <>
-                        <TableRow
-                          key={row.id}
-                          sx={{ "& > *": { borderBottom: "unset" } }}
-                        >
-                          <TableCell>
-                            <IconButton
-                              aria-label="expand row"
-                              size="small"
-                              onClick={() => handleOpenTable(row.id)}
-                            >
-                              {openId === row.id && open ? (
-                                <KeyboardArrowUpIcon />
-                              ) : (
-                                <KeyboardArrowDownIcon />
-                              )}
-                            </IconButton>
-                          </TableCell>
-                          <TableCell component="th" scope="row">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell align="center">{row.firstName}</TableCell>
-                          <TableCell align="center">{row.lastName}</TableCell>
-                          <TableCell align="center">{row.email}</TableCell>
-                          <TableCell align="center">
-                            {row.designation}
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell
-                            style={{ paddingBottom: 0, paddingTop: 0 }}
-                            colSpan={6}
+                {feedbackResponseList?.responses
+                  ?.filter((item: any) => typeof item !== "string")
+                  ?.map((row: any, index: number) => (
+                    <>
+                      <TableRow
+                        key={row.id}
+                        sx={{ "& > *": { borderBottom: "unset" } }}
+                      >
+                        <TableCell>
+                          <IconButton
+                            aria-label="expand row"
+                            size="small"
+                            onClick={() => handleOpenTable(row.id)}
                           >
-                            <Collapse
-                              in={openId === row.id && open}
-                              timeout="auto"
-                              unmountOnExit
-                            >
-                              <Box sx={{ margin: 1 }}>
-                                <Typography
-                                  variant="h6"
-                                  gutterBottom
-                                  component="div"
-                                >
-                                  Feedback Response
-                                </Typography>
-                                <Table size="small" aria-label="purchases">
-                                  <TableHead>
-                                    <TableRow>
-                                      {tableSubHeadings.map((item: string) => (
-                                        <TableCell
-                                          align={
-                                            item === "S.No." ? "left" : "center"
-                                          }
-                                          key={item}
-                                        >
-                                          {item}
+                            {openId === row.id && open ? (
+                              <KeyboardArrowUpIcon />
+                            ) : (
+                              <KeyboardArrowDownIcon />
+                            )}
+                          </IconButton>
+                        </TableCell>
+                        <TableCell component="th" scope="row">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell align="center">{row.firstName}</TableCell>
+                        <TableCell align="center">{row.lastName}</TableCell>
+                        <TableCell align="center">{row.email}</TableCell>
+                        <TableCell align="center">{row.designation}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell
+                          style={{ paddingBottom: 0, paddingTop: 0 }}
+                          colSpan={6}
+                        >
+                          <Collapse
+                            in={openId === row.id && open}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box sx={{ margin: 1 }}>
+                              <Typography
+                                variant="h6"
+                                gutterBottom
+                                component="div"
+                              >
+                                Feedback Response
+                              </Typography>
+                              <Table size="small" aria-label="purchases">
+                                <TableHead>
+                                  <TableRow>
+                                    {tableSubHeadings.map((item: string) => (
+                                      <TableCell
+                                        align={
+                                          item === "S.No." ? "left" : "center"
+                                        }
+                                        key={item}
+                                      >
+                                        {item}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {row?.form_response?.map(
+                                    (historyRow: any, index: number) => (
+                                      <TableRow key={historyRow.id}>
+                                        <TableCell component="th" scope="row">
+                                          {index + 1}
                                         </TableCell>
-                                      ))}
-                                    </TableRow>
-                                  </TableHead>
-                                  <TableBody>
-                                    {row?.form_response?.map(
-                                      (historyRow: any, index: number) => (
-                                        <TableRow key={historyRow.id}>
-                                          <TableCell component="th" scope="row">
-                                            {index + 1}
-                                          </TableCell>
-                                          <TableCell align="center">
-                                            {historyRow.feedbackName}
-                                          </TableCell>
-                                          <TableCell align="center">
-                                            {historyRow.score === ""
-                                              ? "__"
-                                              : historyRow.score}
-                                          </TableCell>
-                                          <TableCell align="center">
-                                            {historyRow.description === ""
-                                              ? "__"
-                                              : historyRow.description}
-                                          </TableCell>
-                                          <TableCell align="center">
-                                            {historyRow.type}
-                                          </TableCell>
-                                        </TableRow>
-                                      )
-                                    )}
-                                  </TableBody>
-                                </Table>
-                              </Box>
-                            </Collapse>
-                          </TableCell>
-                        </TableRow>
-                      </>
-                    ) : null
-                )}
+                                        <TableCell align="center">
+                                          {historyRow.feedbackName}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          {historyRow.score === ""
+                                            ? "__"
+                                            : historyRow.score}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          {historyRow.description === ""
+                                            ? "__"
+                                            : historyRow.description}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          {historyRow.type}
+                                        </TableCell>
+                                      </TableRow>
+                                    )
+                                  )}
+                                </TableBody>
+                              </Table>
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </>
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>
         </>
       ) : (
-        <NoDataFound text="No data Found" />
+        <NoDataFound text="No responses yet!" />
       )}
     </>
   );
