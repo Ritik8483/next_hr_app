@@ -20,9 +20,9 @@ import ListItemText from "@mui/material/ListItemText";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
 import LogoutIcon from "@mui/icons-material/Logout";
-import {  usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { closeAlert } from "@/redux/slices/snackBarSlice";
+import { closeAlert, openAlert } from "@/redux/slices/snackBarSlice";
 import Snackbar from "@mui/material/Snackbar";
 import { Alert } from "@mui/material";
 import {
@@ -32,15 +32,10 @@ import {
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/firebaseConfig";
 import Router from "next/router";
+import AlertBox from "@/components/resuseables/AlertBox";
 
 const drawerWidth = 240;
-const drawerOptions = [
-  "Dashboard",
-  "Generate",
-  "Users",
-  "Roles",
-  "Feedbacks",
-];
+const drawerOptions = ["Dashboard", "Generate", "Users", "Roles", "Feedbacks"];
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
   open?: boolean;
 }>(({ theme, open }) => ({
@@ -103,6 +98,7 @@ export default function SidebarDrawer({ children }: any) {
 
   const [open, setOpen] = useState(false);
   const [option, setOption] = useState(sidebarOption || "Dashboard");
+  const [openAlertBox, setOpenAlertBox] = useState<any>(false);
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -120,13 +116,17 @@ export default function SidebarDrawer({ children }: any) {
     });
   }, [pathname === "/login"]);
 
+  const handleClose = (value: string) => {
+    setOpenAlertBox(false);
+  };
+
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
         dispatch(
-          closeAlert({
-            message: "",
-            type: "",
+          openAlert({
+            type: "success",
+            message: "Logged out successfully!",
           })
         );
         dispatch(clearLoginDetails(null));
@@ -136,18 +136,17 @@ export default function SidebarDrawer({ children }: any) {
         // Sign-out successful.
       })
       .catch((error) => {
+        console.log("error", error);
+
         // An error happened.
       });
   };
 
   const handleSidebarNavigation = (text: string) => {
-    const pathNameArr: any = pathname?.split("/");    
+    const pathNameArr: any = pathname?.split("/");
     const str = text.toLowerCase();
     if (pathNameArr?.length > 2) {
-      router.push(
-        `http://localhost:3000/${str
-        }`
-      );
+      router.push(`http://localhost:3000/${str}`);
       setOption(text);
       localStorage.setItem("sidebarText", JSON.stringify(text));
       dispatch(storeSidebarOption(text));
@@ -183,7 +182,10 @@ export default function SidebarDrawer({ children }: any) {
               <Typography variant="h6" noWrap component="div">
                 {option}
               </Typography>
-              <LogoutIcon onClick={handleLogout} sx={{ cursor: "pointer" }} />
+              <LogoutIcon
+                onClick={() => setOpenAlertBox(true)}
+                sx={{ cursor: "pointer" }}
+              />
             </Box>
           </Toolbar>
         </AppBar>
@@ -248,6 +250,17 @@ export default function SidebarDrawer({ children }: any) {
           {children}
         </Main>
       </Box>
+
+      {openAlertBox && (
+        <AlertBox
+          open={openAlertBox}
+          cancelText="No Cancel"
+          confirmText="Yes Logout"
+          mainHeaderText="Are you sure you want to Logout?"
+          onClose={handleClose}
+          handleClick={handleLogout}
+        />
+      )}
 
       {snackbar.snackbarState && (
         <Snackbar

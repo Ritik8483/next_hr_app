@@ -5,15 +5,11 @@ import { Box } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { Alert } from "@mui/material";
 import { closeAlert } from "@/redux/slices/snackBarSlice";
-import styles from "../../pages/Login.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import Typography from "@mui/material/Typography";
 import { useRouter, useSearchParams } from "next/navigation";
-import { auth, db } from "../../firebaseConfig";
-import {
-  signInWithEmail,
-  storeUsersLoginToken,
-} from "@/redux/slices/authSlice";
+import { db } from "../../firebaseConfig";
+import { storeUsersLoginToken } from "@/redux/slices/authSlice";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import InputField from "@/components/resuseables/InputField";
@@ -27,7 +23,6 @@ import {
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
-  sendSignInLinkToEmail,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import {
@@ -35,9 +30,9 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
   updateDoc,
 } from "firebase/firestore";
+import { formContainer } from "@/styles/styles";
 
 interface IFormInput {
   email: string;
@@ -52,7 +47,6 @@ const UserLogin = () => {
   const params = useSearchParams();
 
   const [togglePage, settogglePage] = useState("signup");
-  // const [activeState, setActiveState] = useState<boolean>(false);
   const [usersEmail, setUsersEmail] = useState<any>([]);
   const [feedbackResponses, setFeedbackResponses] = useState<any>({});
   const [allUsersDetails, setAllUsersDetails] = useState<any>([]);
@@ -335,7 +329,7 @@ const UserLogin = () => {
           <>
             <Typography textAlign="center">User Login</Typography>
             <form
-              className={styles.formContainer}
+              style={formContainer}
               onSubmit={handleSubmit(handleLoginForm)}
             >
               <Box display="flex" flexDirection="column" gap="20px">
@@ -393,7 +387,7 @@ const UserLogin = () => {
           <>
             <Typography textAlign="center">Forgot Password?</Typography>
             <form
-              className={styles.formContainer}
+              style={formContainer}
               onSubmit={handleSubmit(handleForgotForm)}
             >
               <Box display="flex" flexDirection="column" gap="20px">
@@ -432,7 +426,7 @@ const UserLogin = () => {
           <>
             <Typography textAlign="center">User Signup</Typography>
             <form
-              className={styles.formContainer}
+              style={formContainer}
               onSubmit={handleSubmit(handleSubmitForm)}
             >
               <Box display="flex" flexDirection="column" gap="20px">

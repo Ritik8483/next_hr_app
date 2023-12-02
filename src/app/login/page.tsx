@@ -5,12 +5,10 @@ import { Box } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { Alert } from "@mui/material";
 import { closeAlert } from "@/redux/slices/snackBarSlice";
-import styles from "../../pages/Login.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
 import { auth } from "../../firebaseConfig";
-import { signInWithEmail } from "@/redux/slices/authSlice";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import InputField from "@/components/resuseables/InputField";
@@ -18,6 +16,8 @@ import { openAlert } from "@/redux/slices/snackBarSlice";
 import { loginSchema } from "@/schema/schema";
 import { AppDispatch } from "@/redux/store";
 import Buttons from "@/components/resuseables/Buttons";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { formContainer } from "@/styles/styles";
 
 interface IFormInput {
   email: string;
@@ -38,29 +38,46 @@ const Login = () => {
   const snackbar = useSelector((state: any) => state.snackbarSlice);
   const dispatch: AppDispatch = useDispatch();
 
-  const accessToken = useSelector((state: any) => state.authSlice.userToken);
+  // const accessToken = useSelector((state: any) => state.authSlice.userToken);
 
   const handleSubmitForm = async (data: IFormInput) => {
-    try {
-      const reqObj = { auth, email: data.email, password: data.password };
-      const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
-      if (resp?.user?.accessToken) {
+    if (data?.email === "ritik.chauhan@quokkalabs.com") {
+      try {
+        // const reqObj = { auth, email: data.email, password: data.password };
+        // const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
+        const resp: any = await signInWithEmailAndPassword(
+          auth,
+          data.email,
+          data.password
+        );
+
+        if (resp?.user?.accessToken) {
+          localStorage.setItem("sidebarText", JSON.stringify("Dashboard"));
+          localStorage.setItem("userFirebaseToken", JSON.stringify(resp?.user));
+          dispatch(
+            openAlert({
+              type: "success",
+              message: "User logged in successfully!",
+            })
+          );
+          router.push("/dashboard");
+        }
+      } catch (error) {
         dispatch(
           openAlert({
-            type: "success",
-            message: "User logged in successfully!",
+            type: "error",
+            message: "Invalid login credentials",
           })
         );
-        router.push("/dashboard");
+        console.log("error", error);
       }
-    } catch (error) {
+    } else {
       dispatch(
         openAlert({
           type: "error",
-          message: "Invalid login credentials",
+          message: "Please enter correct user email address",
         })
       );
-      console.log("error", error);
     }
   };
 
@@ -75,10 +92,7 @@ const Login = () => {
         width="100%"
       >
         <Typography textAlign="center">QL Feedback App</Typography>
-        <form
-          className={styles.formContainer}
-          onSubmit={handleSubmit(handleSubmitForm)}
-        >
+        <form style={formContainer} onSubmit={handleSubmit(handleSubmitForm)}>
           <Box display="flex" flexDirection="column" gap="20px">
             <InputField
               type="email"

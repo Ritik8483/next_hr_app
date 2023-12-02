@@ -10,7 +10,7 @@ interface SimpleDialogProps {
   cancelText: string;
   confirmText: string;
   mainHeaderText: string;
-  userName: string;
+  userName?: string;
 }
 
 const AlertBox = (props: SimpleDialogProps) => {
@@ -28,9 +28,11 @@ const AlertBox = (props: SimpleDialogProps) => {
     <Dialog sx={{ padding: "20px" }} onClose={onClose} open={open}>
       <DialogTitle fontSize="20px" textAlign="center">
         {mainHeaderText + " "}
-        <Typography fontSize="20px" color="var(--primaryThemeBlue)">
-          {userName} ?
-        </Typography>
+        {userName && (
+          <Typography fontSize="20px" color="var(--primaryThemeBlue)">
+            {userName} ?
+          </Typography>
+        )}
       </DialogTitle>
       <Box
         display="flex"

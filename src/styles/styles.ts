@@ -54,10 +54,19 @@ const searchFieldMenuItem = {
   },
 };
 
+const formContainer:any = {
+  display: "flex",
+  justifyContent: "start",
+  alignItems: "center",
+  flexDirection: "column",
+  gap: "20px",
+};
+
 export {
   modalStyles,
   modalCrossStyle,
   StyledTableCell,
   StyledTableRow,
   searchFieldMenuItem,
+  formContainer
 };
