@@ -37,7 +37,13 @@ import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import AlertBox from "@/components/resuseables/AlertBox";
 
-const tableHeadings = ["S.No.", "Feedback Type", "Person to review", "Actions"];
+const tableHeadings = [
+  "S.No.",
+  "Feedback Type",
+  "Person to review",
+  "Reviewers",
+  "Actions",
+];
 
 const GenerateFeedback = () => {
   const router: any = useRouter();
@@ -50,6 +56,7 @@ const GenerateFeedback = () => {
   const [totalCount, setTotalCount] = useState<number>();
   const [offset, setOffset] = useState<number>(10);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isEmpty, setIsEmpty] = useState<boolean>(false);
   const [prevOffset, setPrevOffset] = useState<number>(0);
   const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,33 +74,15 @@ const GenerateFeedback = () => {
   };
 
   const handleRowClick = (item: any) => {
+    localStorage.setItem("generateId", JSON.stringify(`/generate/${item.id}`));
     router.push(`/generate/${item.id}`);
   };
 
-  const getFeedbacksData = async () => {
-    if (debouncedValue.length > 0) {
-      const usersRef = collection(db, "feedback_form");
-      const querySearch = query(
-        usersRef,
-        or(where("feedback_type", "==", debouncedValue))
-      );
-      const querySnapshot = await getDocs(querySearch);
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setTotalCount(total);
-      setFeedbackFormList(feedbacksArr);
-    } else {
-      const querySnapshot: any = await getDocs(collection(db, "feedback_form"));
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      setTotalCount(total);
-      const allFeedbacksData = querySnapshot?.docs
+  const getAllUsers = async (allFeedbacksData: any) => {
+    try {
+      const usersQuery: any = await getDocs(collection(db, "users"));
+      const querySnapshot: any = await getDocs(collection(db, "roles"));
+      const allRolesData = querySnapshot?.docs
         ?.reverse()
         ?.slice(prevOffset, offset)
         ?.map((doc: any) => {
@@ -102,11 +91,89 @@ const GenerateFeedback = () => {
             ...doc.data(),
           };
         });
-      setFeedbackFormList(allFeedbacksData);
+      const allUsersData = usersQuery?.docs?.map((doc: any) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+
+      const allreviwersId = allFeedbacksData?.map((it: any) => it.reviewer);
+      const usersArr = allreviwersId?.map((it: any) => {
+        const ff = allUsersData.filter((item: any) => it?.includes(item.id));
+        return ff;
+      });
+      const reviewerDataMap = usersArr
+        .flat()
+        .reduce((map: any, reviewer: any) => {
+          map[reviewer.id] = reviewer;
+          return map;
+        }, {});
+
+      const newArray = allFeedbacksData.map((entry: any) => {
+        return {
+          ...entry,
+          reviewer: entry.reviewer.map(
+            (reviewerId: any) => reviewerDataMap[reviewerId]
+          ),
+        };
+      });
+      return newArray;
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
+  const getFeedbacksData = async () => {
+    try {
+      if (debouncedValue.length > 0) {
+        const usersRef = collection(db, "feedback_form");
+        const querySearch = query(
+          usersRef,
+          or(where("feedback_type", "==", debouncedValue))
+        );
+        const querySnapshot = await getDocs(querySearch);
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        });
+        setTotalCount(total);
+        const data = await getAllUsers(feedbacksArr);
+        setFeedbackFormList(data);
+        
+      } else {
+        const querySnapshot: any = await getDocs(
+          collection(db, "feedback_form")
+        );
+
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        setTotalCount(total);
+        const allFeedbacksData = querySnapshot?.docs
+          ?.reverse()
+          ?.slice(prevOffset, offset)
+          ?.map((doc: any) => {
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          });
+        const data = await getAllUsers(allFeedbacksData);
+        setFeedbackFormList(data);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
   useEffect(() => {
     getFeedbacksData();
+    setTimeout(() => {
+      setIsEmpty(true);
+    }, 3000);
   }, [feedbackFormModal, openAlertBox, currentPage, debouncedValue]);
 
   const handleSubmit = (e: any, index: number) => {
@@ -196,7 +263,9 @@ const GenerateFeedback = () => {
         />
       </Box>
 
-      {!feedbackFormList?.length ? (
+      {!feedbackFormList?.length && isEmpty ? (
+        <NoDataFound text="No data Found" />
+      ) : !feedbackFormList?.length ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
@@ -205,7 +274,7 @@ const GenerateFeedback = () => {
       ) : feedbackFormList?.length ? (
         <>
           <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 700 }} aria-label="customized table">
+            <Table aria-label="customized table">
               <TableHead>
                 <TableRow>
                   {tableHeadings.map((item: string) => (
@@ -248,6 +317,21 @@ const GenerateFeedback = () => {
                               .toString()
                           : item.review.firstName + " " + item.review.lastName}
                       </StyledTableCell>
+                      <StyledTableCell align="center">
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: "10px",
+                            justifyContent: "center",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                          }}
+                        >
+                          {item?.reviewer?.map((it: any) => (
+                            <Chip label={it.firstName + " " + it.lastName} />
+                          ))}
+                        </Box>
+                      </StyledTableCell>
                       <StyledTableCell align="right">
                         <Box
                           display="flex"
@@ -256,46 +340,18 @@ const GenerateFeedback = () => {
                           alignItems="center"
                           onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
-                          <form
-                            ref={(el: any) => {
-                              if (formRef?.current) {
-                                formRef.current.push(el);
-                              }
-                            }}
-                            key={item.id}
-                            onSubmit={(e: any) => handleSubmit(e, index)}
-                          >
-                            <input
-                              name="to_email"
-                              defaultValue={item.reviewerEmails}
-                              style={{ visibility: "hidden" }}
-                            />
-                            <input
-                              name="message"
-                              defaultValue={`http://localhost:3000/user-login?id=${item.id}`}
-                              style={{ visibility: "hidden" }}
-                            />
-                            <input
-                              name="user_name"
-                              defaultValue={
-                                item.review.firstName +
-                                " " +
-                                item.review.lastName
-                              }
-                              style={{ visibility: "hidden" }}
-                            />
-                            <Buttons
-                              variant="contained"
-                              disabled={publishFormId === index && isSubmitting}
-                              text={
-                                publishFormId === index && isSubmitting
-                                  ? "Publishing..."
-                                  : "Publish"
-                              }
-                              size="small"
-                              type="submit"
-                            />
-                          </form>
+                          <Buttons
+                            variant="contained"
+                            disabled={publishFormId === index && isSubmitting}
+                            text={
+                              publishFormId === index && isSubmitting
+                                ? "Publishing..."
+                                : "Publish"
+                            }
+                            size="small"
+                            onClick={(e: any) => handleSubmit(e, index)}
+                            type="submit"
+                          />
                           <EditIcon
                             onClick={() => handleEdit(item)}
                             sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
@@ -308,6 +364,34 @@ const GenerateFeedback = () => {
                           />
                         </Box>
                       </StyledTableCell>
+                      <form
+                        ref={(el: any) => {
+                          if (formRef?.current) {
+                            formRef.current.push(el);
+                          }
+                        }}
+                        key={item.id}
+                        onSubmit={(e: any) => handleSubmit(e, index)}
+                      >
+                        <input
+                          name="to_email"
+                          defaultValue={item.reviewerEmails}
+                          style={{ visibility: "hidden" }}
+                        />
+                        <input
+                          name="message"
+                          defaultValue={`http://localhost:3000/user-login?id=${item.id}`}
+                          style={{ visibility: "hidden" }}
+                        />
+
+                        <input
+                          name="user_name"
+                          defaultValue={
+                            item.review.firstName + " " + item.review.lastName
+                          }
+                          style={{ visibility: "hidden" }}
+                        />
+                      </form>
                     </StyledTableRow>
                   );
                 })}
@@ -328,7 +412,7 @@ const GenerateFeedback = () => {
           </TableContainer>
         </>
       ) : (
-        <NoDataFound text="No data Found" />
+        null
       )}
 
       {feedbackFormModal && (

@@ -45,6 +45,7 @@ const Roles = () => {
   const [openRolesModal, setOpenRolesModal] = useState<boolean>(false);
   const [rolesList, setRolesList] = useState([]);
   const [totalCount, setTotalCount] = useState<number>();
+  const [isEmpty, setIsEmpty] = useState<boolean>(false);
   const [offset, setOffset] = useState<number>(10);
   const [prevOffset, setPrevOffset] = useState<number>(0);
   const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
@@ -102,6 +103,9 @@ const Roles = () => {
   };
   useEffect(() => {
     getRolesData();
+    setTimeout(() => {
+      setIsEmpty(true);
+    }, 3000);
   }, [openRolesModal, openAlertBox, currentPage, debouncedValue]);
 
   const handleEdit = (item: any) => {
@@ -139,6 +143,7 @@ const Roles = () => {
   };
 
   const handleRowClick = (id: string) => {
+    localStorage.setItem("generateId", JSON.stringify(`/users/${id}`));
     router.push(`roles/${id}`);
   };
 
@@ -162,7 +167,9 @@ const Roles = () => {
         />
       </Box>
 
-      {!rolesList?.length ? (
+      {!rolesList?.length && isEmpty ? (
+        <NoDataFound text="No data Found" />
+      ) : !rolesList?.length ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
@@ -252,9 +259,7 @@ const Roles = () => {
             />
           </TableContainer>
         </>
-      ) : (
-        <NoDataFound text="No data Found" />
-      )}
+      ) : null}
 
       {openRolesModal && (
         <AddRolesModal

@@ -145,6 +145,7 @@ export default function SidebarDrawer({ children }: any) {
   const handleSidebarNavigation = (text: string) => {
     const pathNameArr: any = pathname?.split("/");
     const str = text.toLowerCase();
+    localStorage.removeItem("generateId");
     if (pathNameArr?.length > 2) {
       router.push(`http://localhost:3000/${str}`);
       setOption(text);

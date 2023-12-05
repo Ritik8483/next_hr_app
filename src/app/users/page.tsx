@@ -55,6 +55,7 @@ const Users = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState<string>("");
   const [totalCount, setTotalCount] = useState<number>();
+  const [isEmpty, setIsEmpty] = useState<boolean>(false);
   const [offset, setOffset] = useState<number>(10);
   const [prevOffset, setPrevOffset] = useState<number>(0);
   const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
@@ -88,7 +89,6 @@ const Users = () => {
       const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
       setTotalNoOfItems(querySnapshot?.docs?.length);
       const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
-        // doc.data() is never undefined for query doc snapshots
         return {
           id: doc.id,
           ...doc.data(),
@@ -117,6 +117,9 @@ const Users = () => {
 
   useEffect(() => {
     getData();
+    setTimeout(() => {
+      setIsEmpty(true);
+    }, 3000);
   }, [openAddUserModal, openAlertBox, currentPage, debouncedValue]);
 
   const handleEdit = (item: any) => {
@@ -147,6 +150,7 @@ const Users = () => {
   };
 
   const handleRowClick = (id: string) => {
+    localStorage.setItem("generateId", JSON.stringify(`/users/${id}`));
     router.push(`/users/${id}`);
   };
 
@@ -170,7 +174,9 @@ const Users = () => {
         />
       </Box>
 
-      {!usersList?.length ? (
+      {!usersList?.length && isEmpty ? (
+        <NoDataFound text="No data Found" />
+      ) : !usersList?.length ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
@@ -222,7 +228,7 @@ const Users = () => {
 
                     <StyledTableCell
                       align="right"
-                      onClick={(e:React.MouseEvent) => e.stopPropagation()}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                       <Box display="flex" gap="15px" justifyContent="flex-end">
                         <EditIcon
@@ -254,9 +260,7 @@ const Users = () => {
             />
           </TableContainer>
         </>
-      ) : (
-        <NoDataFound text="No data Found" />
-      )}
+      ) : null}
 
       {openAlertBox && (
         <AlertBox

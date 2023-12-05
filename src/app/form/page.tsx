@@ -11,16 +11,15 @@ import {
   MenuItem,
   OutlinedInput,
   Select,
-  SelectChangeEvent,
   Typography,
 } from "@mui/material";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
 import { useDispatch, useSelector } from "react-redux";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import { storeUsersLoginToken } from "@/redux/slices/authSlice";
 import { ETM, MTE } from "@/constants/constant";
 
@@ -56,7 +55,6 @@ const FillFeedbackForm = () => {
     (state: any) => state.authSlice.userLoginDetails
   );
 
-
   const getAllFeedbackParameters = async (item: string) => {
     const docRef = doc(db, "feedbacks", item);
     const docSnap: any = await getDoc(docRef);
@@ -88,7 +86,6 @@ const FillFeedbackForm = () => {
               Object.keys(it).some((key) => key.includes("firstName"))
             );
 
-
           const dd = docSnap
             ?.data()
             ?.review?.filter((it: any) =>
@@ -102,7 +99,6 @@ const FillFeedbackForm = () => {
           });
           const filteredUsersFromTeams = arrOfUsers.concat(...teamUsersArr);
           setPeoplesToReviewArr(filteredUsersFromTeams);
-
         }
 
         const resp = docSnap?.data()?.feedback_parameters?.map((it: string) => {
@@ -154,7 +150,6 @@ const FillFeedbackForm = () => {
         });
     }
   }, [peoplesToReviewArr]);
-
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -338,9 +333,10 @@ const FillFeedbackForm = () => {
     setFeedbackUser(item);
   };
 
-  const feedbacksSubmittedFor = typeof formQueDetails?.review === "object" ? [] : formQueDetails?.responses?.map(
-    (it: any) => it?.userInfo?.id
-  );
+  const feedbacksSubmittedFor =
+    typeof formQueDetails?.review === "object"
+      ? []
+      : formQueDetails?.responses?.map((it: any) => it?.userInfo?.id);
 
   return (
     <>
@@ -348,17 +344,28 @@ const FillFeedbackForm = () => {
         minHeight="100vh"
         display="flex"
         justifyContent="center"
+        flexDirection="column"
+        padding="60px 90px"
+        bgcolor="#c6cade"
+        borderRadius="5px"
         alignItems="center"
       >
+        <Box padding="20px 50px" width="100%" bgcolor="#0037ad">
+          <Typography fontSize="24px" color="#fff">
+            Your Matter(eNPS)
+          </Typography>
+        </Box>
         <form
           style={{
-            border: "1px solid black",
-            borderRadius: "10px",
-            padding: "20px",
-            width: "50%",
+            backgroundColor: "#d7e2ee",
+            padding: "20px 50px",
+            width: "100%",
           }}
           onSubmit={handleSubmit}
         >
+          <Typography color="#595c6f" fontSize="14px" marginBottom="30px">
+            *Required
+          </Typography>
           {(formQueDetails?.feedback_type === MTE &&
             Array.isArray(formQueDetails?.review) &&
             formQueDetails?.review?.length === 1 &&
@@ -428,9 +435,14 @@ const FillFeedbackForm = () => {
               return (
                 <>
                   <Box>
-                    <Typography variant="h6">
-                      {index + 1}. {item.feedbackName}
-                    </Typography>
+                    <Box display="flex">
+                      <Typography variant="h6">
+                        {index + 1}. {item.feedbackName}
+                      </Typography>
+                      <Typography variant="h6" color="#595c6f">
+                        *
+                      </Typography>
+                    </Box>
                     <Typography>
                       Description : {item.feedbackDescription}
                     </Typography>
@@ -457,7 +469,7 @@ const FillFeedbackForm = () => {
                           min={0}
                           max={10}
                         />
-                        {validate &&
+                        {/* {validate &&
                           !formData.find((data) => data.id === item.id)
                             ?.score && (
                             <Typography
@@ -468,7 +480,7 @@ const FillFeedbackForm = () => {
                             >
                               Please select a number
                             </Typography>
-                          )}
+                          )} */}
                         <InputField
                           type="text"
                           disabled={
@@ -484,14 +496,22 @@ const FillFeedbackForm = () => {
                               ?.description || ""
                           }
                           size="small"
+                          sx={{
+                            backgroundColor: "#fff",
+                            "& fieldset": { border: "none" },
+                            borderRadius: "5px",
+                          }}
                           key={item.feedbackName}
+                          InputProps={{
+                            disableUnderline: true,
+                          }}
                           name={item.feedbackName}
                           id="score"
                           multiline
                           rows={4}
                           placeholder="Description"
                         />
-                        {validate &&
+                        {/* {validate &&
                           !formData.find((data) => data.id === item.id)
                             ?.description && (
                             <Typography
@@ -502,7 +522,7 @@ const FillFeedbackForm = () => {
                             >
                               Please provide a description
                             </Typography>
-                          )}
+                          )} */}
                       </Box>
                     ) : item.feedback_parameter_type === "Description" ? (
                       <>
@@ -513,7 +533,13 @@ const FillFeedbackForm = () => {
                             peoplesToReviewArr?.length !== 1 &&
                             !feedbackUser
                           }
-                          sx={{ padding: "10px 0" }}
+                          // sx={{ padding: "10px 0", backgroundColor: "#fff" }}
+                          sx={{
+                            marginTop:"10px",
+                            backgroundColor: "#fff",
+                            "& fieldset": { border: "none" },
+                            borderRadius: "5px",
+                          }}
                           size="small"
                           value={
                             formData.find((data) => data.id === item.id)
@@ -530,7 +556,7 @@ const FillFeedbackForm = () => {
                           // errorMessage={errors.email?.message}
                         />
 
-                        {validate &&
+                        {/* {validate &&
                           !formData.find((data) => data.id === item.id)
                             ?.description && (
                             <Typography
@@ -541,7 +567,7 @@ const FillFeedbackForm = () => {
                             >
                               Please provide a description
                             </Typography>
-                          )}
+                          )} */}
                       </>
                     ) : (
                       <>
@@ -565,7 +591,7 @@ const FillFeedbackForm = () => {
                           min={0}
                           max={10}
                         />
-                        {validate &&
+                        {/* {validate &&
                           !formData.find((data) => data.id === item.id)
                             ?.score && (
                             <Typography
@@ -576,7 +602,7 @@ const FillFeedbackForm = () => {
                             >
                               Please select a number
                             </Typography>
-                          )}
+                          )} */}
                       </>
                     )}
                   </Box>
@@ -597,7 +623,6 @@ const FillFeedbackForm = () => {
                 !feedbackUser
               }
               onClick={() => setValidate(true)}
-              // disabled={isSubmitting}
               text="Submit"
             />
           </Box>

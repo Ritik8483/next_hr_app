@@ -2,9 +2,6 @@
 
 import React from "react";
 import { Box } from "@mui/material";
-import Snackbar from "@mui/material/Snackbar";
-import { Alert } from "@mui/material";
-import { closeAlert } from "@/redux/slices/snackBarSlice";
 import { useSelector, useDispatch } from "react-redux";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
@@ -120,36 +117,6 @@ const Login = () => {
         </form>
       </Box>
 
-      {snackbar.snackbarState && (
-        <Snackbar
-          open={snackbar.snackbarState}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          autoHideDuration={1500}
-          onClose={() =>
-            dispatch(
-              closeAlert({
-                message: "",
-                type: "",
-              })
-            )
-          }
-        >
-          <Alert
-            onClose={() =>
-              dispatch(
-                closeAlert({
-                  message: "",
-                  type: "",
-                })
-              )
-            }
-            severity={snackbar.snackbarType}
-            sx={{ width: "100%" }}
-          >
-            {snackbar.snackbarMessage}
-          </Alert>
-        </Snackbar>
-      )}
     </>
   );
 };

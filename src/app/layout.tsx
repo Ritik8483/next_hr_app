@@ -30,6 +30,8 @@ export default function RootLayout({
   const paramsId = params?.get("id");
 
   const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
+  const detailPagesId = JSON.parse(localStorage.getItem("generateId") || "{}");
+
   const userFirebaseToken = JSON.parse(
     localStorage.getItem("userFirebaseToken") || "{}"
   );
@@ -45,7 +47,9 @@ export default function RootLayout({
       userFirebaseToken?.email === "ritik.chauhan@quokkalabs.com"
     ) {
       router.push(
-        Object.keys(sidebarText).length > 1
+        Object.keys(detailPagesId).length
+          ? detailPagesId
+          : Object.keys(sidebarText).length > 1
           ? sidebarText.toLowerCase()
           : "/dashboard"
       );

@@ -51,6 +51,7 @@ const Feedbacks = () => {
   const [feedbacksList, setFeedbacksList] = useState([]);
   const [totalCount, setTotalCount] = useState<number>();
   const [offset, setOffset] = useState<number>(10);
+  const [isEmpty, setIsEmpty] = useState<boolean>(false);
   const [prevOffset, setPrevOffset] = useState<number>(0);
   const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -111,9 +112,13 @@ const Feedbacks = () => {
   };
   useEffect(() => {
     getFeedbacksData();
+    setTimeout(() => {
+      setIsEmpty(true);
+    }, 3000);
   }, [openFeedbackModal, openAlertBox, currentPage, debouncedValue]);
 
   const handleRowClick = (id: string) => {
+    localStorage.setItem("generateId", JSON.stringify(`feedbacks/${id}`));
     router.push(`feedbacks/${id}`);
   };
 
@@ -164,7 +169,9 @@ const Feedbacks = () => {
         />
       </Box>
 
-      {!feedbacksList?.length ? (
+      {!feedbacksList?.length && isEmpty ? (
+        <NoDataFound text="No data Found" />
+      ) : !feedbacksList?.length ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
