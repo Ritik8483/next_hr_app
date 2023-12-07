@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useReducer } from "react";
 import {
   Box,
   Chip,
@@ -144,7 +144,6 @@ const GenerateFeedback = () => {
         setTotalCount(total);
         const data = await getAllUsers(feedbacksArr);
         setFeedbackFormList(data);
-        
       } else {
         const querySnapshot: any = await getDocs(
           collection(db, "feedback_form")
@@ -201,7 +200,7 @@ const GenerateFeedback = () => {
           dispatch(
             openAlert({
               type: "error",
-              message: error.text,
+              message: `${error.text},please try again!`,
             })
           );
           setIsSubmitting(false);
@@ -242,6 +241,15 @@ const GenerateFeedback = () => {
     }
     setOpenAlertBox(false);
   };
+
+  useEffect(() => {
+    formRef.current = formRef.current.slice(0, feedbackFormList.length);
+    feedbackFormList.forEach((_: any, index: number) => {
+      if (!formRef.current[index]) {
+        formRef.current[index] = document.createElement("form");
+      }
+    });
+  }, [feedbackFormList]);
 
   return (
     <>
@@ -366,12 +374,13 @@ const GenerateFeedback = () => {
                       </StyledTableCell>
                       <form
                         ref={(el: any) => {
-                          if (formRef?.current) {
-                            formRef.current.push(el);
+                          if (el && formRef.current[index]) {
+                            // Update the ref for the corresponding form element
+                            formRef.current[index] = el;
                           }
                         }}
                         key={item.id}
-                        onSubmit={(e: any) => handleSubmit(e, index)}
+                        // onSubmit={(e: any) => handleSubmit(e, index)}
                       >
                         <input
                           name="to_email"
@@ -411,9 +420,7 @@ const GenerateFeedback = () => {
             />
           </TableContainer>
         </>
-      ) : (
-        null
-      )}
+      ) : null}
 
       {feedbackFormModal && (
         <GenerateFeedbackModal

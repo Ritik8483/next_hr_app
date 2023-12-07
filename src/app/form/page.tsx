@@ -73,7 +73,7 @@ const FillFeedbackForm = () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setFormQueDetails(docSnap?.data());
-        if (typeof docSnap?.data()?.review !== "object") {
+        if (Array.isArray(docSnap?.data()?.review)) {
           const filterUserArr = docSnap
             ?.data()
             ?.review?.map((it: any) => it.id);
@@ -136,13 +136,18 @@ const FillFeedbackForm = () => {
       formQueDetails?.review?.length === 1
     )
       return;
+    const onlyResponseObj = formQueDetails?.responses?.filter(
+      (it: any) => feedbackReviewerEmail?.email === it.email
+    );
     if (
       formQueDetails?.feedback_type === MTE &&
-      formQueDetails?.responses?.length === peoplesToReviewArr?.length
+      // formQueDetails?.responses?.length === peoplesToReviewArr?.length
+      onlyResponseObj?.length === peoplesToReviewArr?.length
     ) {
       dispatch(storeUsersLoginToken(null));
       signOut(auth)
         .then(() => {
+          setPeoplesToReviewArr([]);
           router.push(`/user-login?id=${feedbackId}`);
         })
         .catch((error: any) => {
@@ -189,86 +194,79 @@ const FillFeedbackForm = () => {
             }),
       };
 
-      const payloadMTE =
-        typeof formQueDetails?.review === "object"
-          ? {}
-          : {
-              ...formQueDetails,
-              responses: formQueDetails?.responses?.length
-                ? [
-                    ...formQueDetails?.responses,
-                    {
-                      ...feedbackReviewerEmail,
-                      userInfo: feedbackUser,
-                      form_response: formData,
-                    },
-                  ]
-                : formQueDetails?.reviewer?.map((it: any) => {
-                    if (feedbackUser.id && it === feedbackReviewerEmail?.id) {
-                      return {
-                        ...feedbackReviewerEmail,
-                        userInfo: feedbackUser,
-                        form_response: formData,
-                      };
-                    } else if (
-                      Object.keys(formQueDetails?.review[0]).includes(
-                        "firstName"
-                      ) &&
-                      formQueDetails?.review?.length === 1
-                    ) {
-                      return {
-                        ...feedbackReviewerEmail,
-                        userInfo:
-                          Object.keys(formQueDetails?.review[0]).includes(
-                            "firstName"
-                          ) && formQueDetails?.review?.length === 1
-                            ? formQueDetails?.review[0]
-                            : feedbackUser,
-                        form_response: formData,
-                      };
-                    } else if (it === feedbackReviewerEmail?.id) {
-                      return {
-                        ...feedbackReviewerEmail,
-                        form_response: formData,
-                      };
-                    } else return it;
-                  }),
-            };
+      const payloadMTE = Array.isArray(formQueDetails?.review) && {
+        ...formQueDetails,
+        responses: formQueDetails?.responses?.length
+          ? [
+              ...formQueDetails?.responses,
+              {
+                ...feedbackReviewerEmail,
+                userInfo: feedbackUser,
+                form_response: formData,
+              },
+            ]
+          : formQueDetails?.reviewer?.map((it: any) => {
+              if (feedbackUser.id && it === feedbackReviewerEmail?.id) {
+                return {
+                  ...feedbackReviewerEmail,
+                  userInfo: feedbackUser,
+                  form_response: formData,
+                };
+              } else if (
+                Object.keys(formQueDetails?.review[0]).includes("firstName") &&
+                formQueDetails?.review?.length === 1
+              ) {
+                return {
+                  ...feedbackReviewerEmail,
+                  userInfo:
+                    Object.keys(formQueDetails?.review[0]).includes(
+                      "firstName"
+                    ) && formQueDetails?.review?.length === 1
+                      ? formQueDetails?.review[0]
+                      : feedbackUser,
+                  form_response: formData,
+                };
+              } else if (it === feedbackReviewerEmail?.id) {
+                return {
+                  ...feedbackReviewerEmail,
+                  form_response: formData,
+                };
+              } else return it;
+            }),
+      };
+      const payloadSingleMte = Array.isArray(formQueDetails?.review) && {
+        ...formQueDetails,
+        responses: formQueDetails?.responses?.length
+          ? [
+              ...formQueDetails?.responses,
+              {
+                ...feedbackReviewerEmail,
+                userInfo: formQueDetails?.review[0],
+                form_response: formData,
+              },
+            ]
+          : formQueDetails?.review?.map((it: any) => {
+              if (
+                formQueDetails?.review?.length === 1 &&
+                Object.keys(formQueDetails?.review[0]).includes("firstName")
+              ) {
+                return {
+                  ...feedbackReviewerEmail,
+                  userInfo:
+                    formQueDetails?.review?.length === 1 &&
+                    Object.keys(formQueDetails?.review[0]).includes("firstName")
+                      ? formQueDetails?.review[0]
+                      : feedbackUser,
+                  form_response: formData,
+                };
+              }
+            }),
+      };
 
-      const payloadSingleMte =
-        typeof formQueDetails?.review === "object"
-          ? {}
-          : {
-              ...formQueDetails,
-              responses: formQueDetails?.responses?.length
-                ? [
-                    ...formQueDetails?.responses,
-                    {
-                      ...feedbackReviewerEmail,
-                      userInfo: formQueDetails?.review[0],
-                      form_response: formData,
-                    },
-                  ]
-                : formQueDetails?.review?.map((it: any) => {
-                    if (
-                      Object.keys(formQueDetails?.review[0]).includes(
-                        "firstName"
-                      ) &&
-                      formQueDetails?.review?.length === 1
-                    ) {
-                      return {
-                        ...feedbackReviewerEmail,
-                        userInfo:
-                          Object.keys(formQueDetails?.review[0]).includes(
-                            "firstName"
-                          ) && formQueDetails?.review?.length === 1
-                            ? formQueDetails?.review[0]
-                            : feedbackUser,
-                        form_response: formData,
-                      };
-                    }
-                  }),
-            };
+      const payloadFilter = payloadMTE?.responses?.filter(
+        (it: any) => typeof it === "object"
+      );
+      const finalPayloadMTE = { ...payloadMTE, responses: payloadFilter };
 
       const userId = doc(db, "feedback_form", feedbackId);
       await updateDoc(
@@ -278,7 +276,7 @@ const FillFeedbackForm = () => {
           formQueDetails?.review?.length === 1
           ? payloadSingleMte
           : formQueDetails?.feedback_type === MTE
-          ? payloadMTE
+          ? finalPayloadMTE
           : payload
       );
       getFeedbacksData();
@@ -300,6 +298,7 @@ const FillFeedbackForm = () => {
         dispatch(storeUsersLoginToken(null));
         signOut(auth)
           .then(() => {
+            setPeoplesToReviewArr([]);
             router.push(`/user-login?id=${feedbackId}`);
           })
           .catch((error: any) => {
@@ -334,10 +333,11 @@ const FillFeedbackForm = () => {
   };
 
   const feedbacksSubmittedFor =
-    typeof formQueDetails?.review === "object"
-      ? []
-      : formQueDetails?.responses?.map((it: any) => it?.userInfo?.id);
-
+    Array.isArray(formQueDetails?.review) &&
+    formQueDetails?.responses?.map(
+      (it: any) => feedbackReviewerEmail?.email === it.email && it?.userInfo?.id
+    );
+    
   return (
     <>
       <Box
@@ -370,8 +370,9 @@ const FillFeedbackForm = () => {
             Array.isArray(formQueDetails?.review) &&
             formQueDetails?.review?.length === 1 &&
             peoplesToReviewArr?.length === 1) ||
-          typeof formQueDetails?.review === "object" ? null : (
-            <Box>
+          (formQueDetails?.feedback_type === ETM &&
+            Object.keys(formQueDetails?.review).length) ? null : (
+            <Box marginBottom="20px">
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
                 Select feedback for
               </InputLabel>
@@ -456,7 +457,8 @@ const FillFeedbackForm = () => {
                           disabled={
                             Array.isArray(formQueDetails?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
-                            !feedbackUser
+                            !feedbackUser &&
+                            formQueDetails?.review?.length !== 1
                           }
                           getAriaValueText={valuetext}
                           onChange={(e, value) =>
@@ -486,7 +488,8 @@ const FillFeedbackForm = () => {
                           disabled={
                             Array.isArray(formQueDetails?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
-                            !feedbackUser
+                            !feedbackUser &&
+                            formQueDetails?.review?.length !== 1
                           }
                           onChange={(e: any) =>
                             handleDescChange(item.id, e.target.value)
@@ -531,11 +534,11 @@ const FillFeedbackForm = () => {
                           disabled={
                             Array.isArray(formQueDetails?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
-                            !feedbackUser
+                            !feedbackUser &&
+                            formQueDetails?.review?.length !== 1
                           }
-                          // sx={{ padding: "10px 0", backgroundColor: "#fff" }}
                           sx={{
-                            marginTop:"10px",
+                            marginTop: "10px",
                             backgroundColor: "#fff",
                             "& fieldset": { border: "none" },
                             borderRadius: "5px",
@@ -553,7 +556,6 @@ const FillFeedbackForm = () => {
                           name={item.feedbackName}
                           rows={4}
                           placeholder="Description"
-                          // errorMessage={errors.email?.message}
                         />
 
                         {/* {validate &&
@@ -577,7 +579,8 @@ const FillFeedbackForm = () => {
                           disabled={
                             Array.isArray(formQueDetails?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
-                            !feedbackUser
+                            !feedbackUser &&
+                            formQueDetails?.review?.length !== 1
                           }
                           defaultValue={0}
                           name={item.feedbackName}
@@ -620,7 +623,8 @@ const FillFeedbackForm = () => {
               disabled={
                 Array.isArray(formQueDetails?.review) &&
                 peoplesToReviewArr?.length !== 1 &&
-                !feedbackUser
+                !feedbackUser &&
+                formQueDetails?.review?.length !== 1
               }
               onClick={() => setValidate(true)}
               text="Submit"

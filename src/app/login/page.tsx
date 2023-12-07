@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Box } from "@mui/material";
+import { Alert, Box, Snackbar } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
 import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { auth } from "../../firebaseConfig";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import InputField from "@/components/resuseables/InputField";
-import { openAlert } from "@/redux/slices/snackBarSlice";
+import { closeAlert, openAlert } from "@/redux/slices/snackBarSlice";
 import { loginSchema } from "@/schema/schema";
 import { AppDispatch } from "@/redux/store";
 import Buttons from "@/components/resuseables/Buttons";
@@ -26,6 +26,7 @@ const Login = () => {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<any>({
     resolver: yupResolver(loginSchema),
@@ -57,6 +58,7 @@ const Login = () => {
               message: "User logged in successfully!",
             })
           );
+          reset();
           router.push("/dashboard");
         }
       } catch (error) {
@@ -111,12 +113,42 @@ const Login = () => {
               type="submit"
               variant="contained"
               disabled={isSubmitting}
-              text="Login"
+              text={isSubmitting ? "Login..." : "Login"}
             />
           </Box>
         </form>
       </Box>
 
+      {snackbar.snackbarState && (
+        <Snackbar
+          open={snackbar.snackbarState}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          autoHideDuration={1500}
+          onClose={() =>
+            dispatch(
+              closeAlert({
+                message: "",
+                type: "",
+              })
+            )
+          }
+        >
+          <Alert
+            onClose={() =>
+              dispatch(
+                closeAlert({
+                  message: "",
+                  type: "",
+                })
+              )
+            }
+            severity={snackbar.snackbarType}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.snackbarMessage}
+          </Alert>
+        </Snackbar>
+      )}
     </>
   );
 };

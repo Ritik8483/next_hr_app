@@ -123,8 +123,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
   const handleMultiReviewChange = (item: any) => {
     const personNames: any = [...multipleReviewType];
-    const indexOfItem = personNames.findIndex((it: any) => it.id === item.id);
 
+    const indexOfItem = personNames.findIndex((it: any) => it.id === item.id);
     if (indexOfItem !== -1) {
       personNames.splice(indexOfItem, 1);
     } else {
@@ -167,7 +167,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       const resp = allUsersData?.filter((item: any) =>
         feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.email)
       );
-
 
       if (feedbackFormDetail?.id && !reviewerType.length) {
         reviewerArrOfUsers = resp;
@@ -514,10 +513,14 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     {rolesList?.length ? (
                       rolesList?.map((it: any) => {
                         return (
-                          <MenuItem key={it.id} value={it}>
+                          <MenuItem
+                            key={it.id}
+                            value={it}
+                            onClick={() => handleMultiReviewChange(it)}
+                          >
                             <Checkbox
                               defaultChecked={reviewTeamIds?.includes(it.id)}
-                              onClick={() => handleMultiReviewChange(it)}
+                              checked={reviewTeamIds?.includes(it.id)}
                             />
                             <ListItemText primary={it.teamName} />
                           </MenuItem>
@@ -530,10 +533,14 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     {usersList.length ? (
                       usersList?.map((it: any) => {
                         return (
-                          <MenuItem key={it.id} value={it}>
+                          <MenuItem
+                            key={it.id}
+                            value={it}
+                            onClick={() => handleMultiReviewChange(it)}
+                          >
                             <Checkbox
                               defaultChecked={reviewTeamIds?.includes(it.id)}
-                              onClick={() => handleMultiReviewChange(it)}
+                              checked={reviewTeamIds?.includes(it.id)}
                             />
                             <ListItemText
                               primary={it.firstName + " " + it.lastName}
@@ -617,10 +624,14 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 {rolesList?.length ? (
                   rolesList?.map((it: any) => {
                     return (
-                      <MenuItem key={it.id} value={it}>
+                      <MenuItem
+                        key={it.id}
+                        value={it}
+                        onClick={() => handleReviewerChange(it)}
+                      >
                         <Checkbox
                           defaultChecked={teamIds?.includes(it.id)}
-                          onClick={() => handleReviewerChange(it)}
+                          checked={teamIds?.includes(it.id)}
                         />
                         <ListItemText primary={it.teamName} />
                       </MenuItem>
@@ -633,10 +644,14 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 {usersList.length ? (
                   usersList?.map((it: any) => {
                     return (
-                      <MenuItem key={it.id} value={it}>
+                      <MenuItem
+                        key={it.id}
+                        value={it}
+                        onClick={() => handleReviewerChange(it)}
+                      >
                         <Checkbox
                           defaultChecked={teamIds?.includes(it.id)}
-                          onClick={() => handleReviewerChange(it)}
+                          checked={teamIds?.includes(it.id)}
                         />
                         <ListItemText
                           primary={it.firstName + " " + it.lastName}
@@ -700,12 +715,16 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 {feedbacksList?.length ? (
                   feedbacksList?.map((it: any) => {
                     return (
-                      <MenuItem key={it.id} value={it}>
+                      <MenuItem
+                        key={it.id}
+                        value={it}
+                        onClick={() => handleFeedbackChange(it)}
+                      >
                         <Checkbox
                           defaultChecked={feedbackParametersArray?.includes(
                             it.id
                           )}
-                          onClick={() => handleFeedbackChange(it)}
+                          checked={feedbackParametersArray?.includes(it.id)}
                         />
                         <ListItemText
                           primary={

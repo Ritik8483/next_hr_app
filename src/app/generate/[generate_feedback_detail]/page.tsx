@@ -8,7 +8,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { Breadcrumbs, Chip } from "@mui/material";
+import { Avatar, Breadcrumbs, Chip } from "@mui/material";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import { ETM, MTE } from "@/constants/constant";
 import MTEtable from "./MTEtable";
@@ -36,7 +36,6 @@ const GenerateFeedbackDetail = () => {
           docSnap?.data()?.feedback_type === MTE &&
           Array.isArray(docSnap?.data()?.review)
         ) {
-
           const filterUserArr = docSnap
             ?.data()
             ?.review?.map((it: any) => it.id);
@@ -47,16 +46,16 @@ const GenerateFeedbackDetail = () => {
           const filteredTeamsArr = docSnap
             ?.data()
             ?.review?.filter((it: any) =>
-              Object.keys(it).some((key) => key.includes("team"))
+              Object.keys(it).some((key) => key?.includes("team"))
             );
           const arrOfUsers = docSnap
             ?.data()
             ?.review?.filter((it: any) =>
-              Object.keys(it).some((key) => key.includes("firstName"))
+              Object.keys(it).some((key) => key?.includes("firstName"))
             );
           const teamUsersArr = filteredTeamsArr.map((it: any) => {
             return it.teamUsers.filter(
-              (items: any) => !usersArr.includes(items.id)
+              (items: any) => !usersArr?.includes(items.id)
             );
           });
           const filteredUsersFromTeams = arrOfUsers.concat(...teamUsersArr);
@@ -67,7 +66,7 @@ const GenerateFeedbackDetail = () => {
             ?.responses?.map((it: any) => it.userInfo.id);
 
           const pendingReviewArr = filteredUsersFromTeams?.filter(
-            (it: any) => !usersMTEArr.includes(it.id)
+            (it: any) => !usersMTEArr?.includes(it.id)
           );
           setPendingMTEReviews(pendingReviewArr);
         }
@@ -163,15 +162,36 @@ const GenerateFeedbackDetail = () => {
             : {feedbackResponseList?.reviewer?.length}
           </Typography>
         )}
-        {feedbackResponseList?.feedback_type === MTE ? (
+        {feedbackResponseList?.feedback_type === MTE &&
+        feedbackResponseList?.reviewer?.length > 1 &&
+        feedbackResponseList?.review?.length > 1 ? (
           <Box display="flex" gap="5px" alignItems="center">
             Done Review of :{" "}
             {feedbackResponseList?.responses?.length
               ? feedbackResponseList?.responses?.map((item: any) => (
                   <Chip
-                    key={item.userInfo.id}
+                    avatar={
+                      <Avatar>
+                        {item?.firstName.substring(0, 1) +
+                          item?.lastName.substring(0, 1)}
+                      </Avatar>
+                    }
                     label={
-                      item.userInfo.firstName + " " + item.userInfo.lastName
+                      item?.userInfo?.firstName + " " + item?.userInfo?.lastName
+                    }
+                  />
+                ))
+              : 0}
+          </Box>
+        ) : feedbackResponseList?.feedback_type === MTE ? (
+          <Box display="flex" gap="5px" alignItems="center">
+            Done Review of :{" "}
+            {feedbackResponseList?.responses?.length
+              ? feedbackResponseList?.responses?.map((item: any) => (
+                  <Chip
+                    key={item?.userInfo?.id}
+                    label={
+                      item?.userInfo?.firstName + " " + item?.userInfo?.lastName
                     }
                     variant="outlined"
                   />
@@ -201,7 +221,9 @@ const GenerateFeedbackDetail = () => {
           </Box>
         )}
 
-        {feedbackResponseList?.feedback_type === MTE ? (
+        {feedbackResponseList?.feedback_type === MTE &&
+        feedbackResponseList?.reviewer?.length > 1 &&
+        feedbackResponseList?.review?.length > 1 ? null : feedbackResponseList?.feedback_type === MTE ? (
           <Box display="flex" gap="5px" alignItems="center">
             Pending reviews of :{" "}
             {pendingMTEReviews?.length
