@@ -84,39 +84,39 @@ const Login = () => {
     <>
       <Box
         display="flex"
-        flexDirection="column"
-        gap="20px"
         justifyContent="center"
+        alignItems="center"
         minHeight="100vh"
-        width="100%"
       >
-        <Typography textAlign="center">QL Feedback App</Typography>
-        <form style={formContainer} onSubmit={handleSubmit(handleSubmitForm)}>
-          <Box display="flex" flexDirection="column" gap="20px">
-            <InputField
-              type="email"
-              register={register}
-              id="email"
-              name="email" //name is essentially required
-              placeholder="Email"
-              errorMessage={errors.email?.message}
-            />
-            <InputField
-              register={register}
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Password"
-              errorMessage={errors.password?.message}
-            />
-            <Buttons
-              type="submit"
-              variant="contained"
-              disabled={isSubmitting}
-              text={isSubmitting ? "Login..." : "Login"}
-            />
-          </Box>
-        </form>
+        <Box>
+          <Typography textAlign="center">QL Feedback App</Typography>
+          <form style={formContainer} onSubmit={handleSubmit(handleSubmitForm)}>
+            <Box display="flex" flexDirection="column" gap="20px">
+              <InputField
+                type="email"
+                register={register}
+                id="email"
+                name="email" //name is essentially required
+                placeholder="Email"
+                errorMessage={errors.email?.message}
+              />
+              <InputField
+                register={register}
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Password"
+                errorMessage={errors.password?.message}
+              />
+              <Buttons
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                text={isSubmitting ? "Login..." : "Login"}
+              />
+            </Box>
+          </form>
+        </Box>
       </Box>
 
       {snackbar.snackbarState && (

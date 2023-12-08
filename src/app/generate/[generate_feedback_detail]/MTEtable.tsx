@@ -31,7 +31,8 @@ const tableSubHeadings = [
 ];
 
 const MTEtable = (props: any) => {
-  const { feedbackResponseList, handleOpenTable, open, openId } = props;
+  const { feedbackResponseList, handleOpenTable, open, openId, openAllCollapses } =
+    props;
   return (
     <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
       <Table aria-label="collapsible table">
@@ -107,14 +108,14 @@ const MTEtable = (props: any) => {
                       colSpan={6}
                     >
                       <Collapse
-                        in={
-                          feedbackResponseList?.feedback_type === MTE &&
+                        in={openAllCollapses || 
+                          (feedbackResponseList?.feedback_type === MTE &&
                           feedbackResponseList?.review?.length === 1 &&
                           Object.keys(feedbackResponseList?.review[0]).includes(
                             "firstName"
                           )
                             ? openId === row?.id && open
-                            : openId === index && open
+                            : openId === index && open)
                         }
                         timeout="auto"
                         unmountOnExit

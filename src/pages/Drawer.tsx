@@ -15,10 +15,13 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import PersonIcon from "@mui/icons-material/Person";
+import PublishIcon from "@mui/icons-material/Publish";
+import FeedbackIcon from "@mui/icons-material/Feedback";
+import GroupsIcon from "@mui/icons-material/Groups";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
@@ -31,7 +34,6 @@ import {
 } from "@/redux/slices/authSlice";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/firebaseConfig";
-import Router from "next/router";
 import AlertBox from "@/components/resuseables/AlertBox";
 
 const drawerWidth = 240;
@@ -213,37 +215,57 @@ export default function SidebarDrawer({ children }: any) {
             </IconButton>
           </DrawerHeader>
           <List>
-            {drawerOptions.map((text, index) => (
-              <ListItem
-                onClick={() => handleSidebarNavigation(text)}
-                sx={{
-                  backgroundColor:
-                    text === option ? "var(--primaryThemeBlue)" : "#fff",
-                  color: text === option ? "#fff" : "var(--iconGrey)",
-                }}
-                key={text}
-                disablePadding
-              >
-                <ListItemButton>
-                  <ListItemIcon>
-                    {index % 2 === 0 ? (
-                      <InboxIcon
-                        sx={{
-                          color: text === option ? "#fff" : "var(--iconGrey)",
-                        }}
-                      />
-                    ) : (
-                      <MailIcon
-                        sx={{
-                          color: text === option ? "#fff" : "var(--iconGrey)",
-                        }}
-                      />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText primary={text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
+            {drawerOptions.map((text, index) => {
+              return (
+                <ListItem
+                  onClick={() => handleSidebarNavigation(text)}
+                  sx={{
+                    backgroundColor:
+                      text === option ? "var(--primaryThemeBlue)" : "#fff",
+                    color: text === option ? "#fff" : "var(--iconGrey)",
+                  }}
+                  key={text}
+                  disablePadding
+                >
+                  <ListItemButton>
+                    <ListItemIcon>
+                      {text === "Dashboard" ? (
+                        <DashboardIcon
+                          sx={{
+                            color: text === option ? "#fff" : "var(--iconGrey)",
+                          }}
+                        />
+                      ) : text === "Generate" ? (
+                        <PublishIcon
+                          sx={{
+                            color: text === option ? "#fff" : "var(--iconGrey)",
+                          }}
+                        />
+                      ) : text === "Roles" ? (
+                        <GroupsIcon
+                          sx={{
+                            color: text === option ? "#fff" : "var(--iconGrey)",
+                          }}
+                        />
+                      ) : text === "Users" ? (
+                        <PersonIcon
+                          sx={{
+                            color: text === option ? "#fff" : "var(--iconGrey)",
+                          }}
+                        />
+                      ) : (
+                        <FeedbackIcon
+                          sx={{
+                            color: text === option ? "#fff" : "var(--iconGrey)",
+                          }}
+                        />
+                      )}
+                    </ListItemIcon>
+                    <ListItemText primary={text} />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </List>
         </Drawer>
         <Main open={open}>

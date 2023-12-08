@@ -5,7 +5,7 @@ import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import { db } from "@/firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Avatar, Breadcrumbs, Chip } from "@mui/material";
@@ -13,9 +13,13 @@ import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import { ETM, MTE } from "@/constants/constant";
 import MTEtable from "./MTEtable";
 import ETMtable from "./ETMtable";
+import html2PDF from "jspdf-html2canvas";
+import { DownloadTableExcel } from "react-export-table-to-excel";
+import Buttons from "@/components/resuseables/Buttons";
 
 const GenerateFeedbackDetail = () => {
   const router: any = useRouter();
+  const tableRef: any = useRef();
   const { generate_feedback_detail } = useParams<any>();
   const [feedbackResponseList, setFeedbackResponseList] = useState<any>({});
   const [doneReviewers, setDoneReviewers] = useState<any>([]);
@@ -23,6 +27,7 @@ const GenerateFeedbackDetail = () => {
   const [peoplesToReviewArr, setPeoplesToReviewArr] = useState<any>([]);
   const [pendingReviewers, setPendingReviewers] = useState<any>([]);
   const [open, setOpen] = useState(false);
+  const [openAllCollapses, setOpenAllCollapses] = useState(false);
   const [openId, setOpenId] = useState<string>("");
   const pathName = usePathname();
 
@@ -135,6 +140,27 @@ const GenerateFeedbackDetail = () => {
     </Typography>,
   ];
 
+  const downloadPrintPDF = async () => {
+    await html2PDF(tableRef.current, {
+      jsPDF: {
+        format: "a4",
+      },
+      html2canvas: {
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        imageTimeout: 15000,
+        logging: true,
+        useCORS: true,
+      },
+      imageType: "image/jpeg",
+      margin: { top: 15, right: 10, bottom: 20, left: 10 },
+      output: `ql.pdf`,
+    });
+    setOpenAllCollapses(false);
+    // domElement.style.display = 'none';
+    // setLoad(false);
+  };
+
   return (
     <>
       <Breadcrumbs
@@ -144,153 +170,175 @@ const GenerateFeedbackDetail = () => {
         {breadcrumbs}
       </Breadcrumbs>
 
-      <Box marginTop="20px" display="flex" flexDirection="column" gap="20px">
-        {feedbackResponseList?.feedback_type === MTE ? (
-          <Typography>
-            Total{" "}
-            {Array.isArray(feedbackResponseList?.review)
-              ? "persons to review"
-              : "Reviewers"}{" "}
-            : {peoplesToReviewArr?.length}
-          </Typography>
-        ) : (
-          <Typography>
-            Total{" "}
-            {feedbackResponseList?.reviewer?.length === 1
-              ? "Reviewer"
-              : "Reviewers"}{" "}
-            : {feedbackResponseList?.reviewer?.length}
-          </Typography>
-        )}
-        {feedbackResponseList?.feedback_type === MTE &&
-        feedbackResponseList?.reviewer?.length > 1 &&
-        feedbackResponseList?.review?.length > 1 ? (
-          <Box display="flex" gap="5px" alignItems="center">
-            Done Review of :{" "}
-            {feedbackResponseList?.responses?.length
-              ? feedbackResponseList?.responses?.map((item: any) => (
-                  <Chip
-                    avatar={
-                      <Avatar>
-                        {item?.firstName.substring(0, 1) +
-                          item?.lastName.substring(0, 1)}
-                      </Avatar>
-                    }
-                    label={
-                      item?.userInfo?.firstName + " " + item?.userInfo?.lastName
-                    }
-                  />
-                ))
-              : 0}
-          </Box>
-        ) : feedbackResponseList?.feedback_type === MTE ? (
-          <Box display="flex" gap="5px" alignItems="center">
-            Done Review of :{" "}
-            {feedbackResponseList?.responses?.length
-              ? feedbackResponseList?.responses?.map((item: any) => (
-                  <Chip
-                    key={item?.userInfo?.id}
-                    label={
-                      item?.userInfo?.firstName + " " + item?.userInfo?.lastName
-                    }
-                    variant="outlined"
-                  />
-                ))
-              : 0}
-          </Box>
-        ) : (
-          <Box display="flex" gap="5px" alignItems="center">
-            Done By :{" "}
-            {doneReviewers?.length
-              ? doneReviewers?.map((item: any) => (
-                  <Chip
-                    key={item.id}
-                    label={
-                      item.firstName +
-                      " " +
-                      item.lastName +
-                      " " +
-                      "(" +
-                      item.email +
-                      ")"
-                    }
-                    variant="outlined"
-                  />
-                ))
-              : 0}
-          </Box>
-        )}
+      <DownloadTableExcel
+        filename="users table"
+        sheet="users"
+        currentTableRef={tableRef.current}
+      >
+        <button> Export excel </button>
+      </DownloadTableExcel>
 
-        {feedbackResponseList?.feedback_type === MTE &&
-        feedbackResponseList?.reviewer?.length > 1 &&
-        feedbackResponseList?.review?.length > 1 ? null : feedbackResponseList?.feedback_type === MTE ? (
-          <Box display="flex" gap="5px" alignItems="center">
-            Pending reviews of :{" "}
-            {pendingMTEReviews?.length
-              ? pendingMTEReviews?.map((item: any) => (
-                  <Chip
-                    key={item.id}
-                    label={item.firstName + " " + item.lastName}
-                    variant="outlined"
-                  />
-                ))
-              : 0}
-          </Box>
+      <Buttons
+        text="download PDF"
+        onMouseOver={() => setOpenAllCollapses(true)}
+        onClick={downloadPrintPDF}
+      />
+      <Box ref={tableRef}>
+        <Box marginTop="20px" display="flex" flexDirection="column" gap="20px">
+          {feedbackResponseList?.feedback_type === MTE ? (
+            <Typography>
+              Total{" "}
+              {Array.isArray(feedbackResponseList?.review)
+                ? "persons to review"
+                : "Reviewers"}{" "}
+              : {peoplesToReviewArr?.length}
+            </Typography>
+          ) : (
+            <Typography>
+              Total{" "}
+              {feedbackResponseList?.reviewer?.length === 1
+                ? "Reviewer"
+                : "Reviewers"}{" "}
+              : {feedbackResponseList?.reviewer?.length}
+            </Typography>
+          )}
+          {feedbackResponseList?.feedback_type === MTE &&
+          feedbackResponseList?.reviewer?.length > 1 &&
+          feedbackResponseList?.review?.length > 1 ? (
+            <Box display="flex" gap="5px" alignItems="center">
+              Done Review of :{" "}
+              {feedbackResponseList?.responses?.length
+                ? feedbackResponseList?.responses?.map((item: any) => (
+                    <Chip
+                      avatar={
+                        <Avatar>
+                          {item?.firstName.substring(0, 1) +
+                            item?.lastName.substring(0, 1)}
+                        </Avatar>
+                      }
+                      label={
+                        item?.userInfo?.firstName +
+                        " " +
+                        item?.userInfo?.lastName
+                      }
+                    />
+                  ))
+                : 0}
+            </Box>
+          ) : feedbackResponseList?.feedback_type === MTE ? (
+            <Box display="flex" gap="5px" alignItems="center">
+              Done Review of :{" "}
+              {feedbackResponseList?.responses?.length
+                ? feedbackResponseList?.responses?.map((item: any) => (
+                    <Chip
+                      key={item?.userInfo?.id}
+                      label={
+                        item?.userInfo?.firstName +
+                        " " +
+                        item?.userInfo?.lastName
+                      }
+                      variant="outlined"
+                    />
+                  ))
+                : 0}
+            </Box>
+          ) : (
+            <Box display="flex" gap="5px" alignItems="center">
+              Done By :{" "}
+              {doneReviewers?.length
+                ? doneReviewers?.map((item: any) => (
+                    <Chip
+                      key={item.id}
+                      label={
+                        item.firstName +
+                        " " +
+                        item.lastName +
+                        " " +
+                        "(" +
+                        item.email +
+                        ")"
+                      }
+                      variant="outlined"
+                    />
+                  ))
+                : 0}
+            </Box>
+          )}
+
+          {feedbackResponseList?.feedback_type === MTE &&
+          feedbackResponseList?.reviewer?.length > 1 &&
+          feedbackResponseList?.review?.length >
+            1 ? null : feedbackResponseList?.feedback_type === MTE ? (
+            <Box display="flex" gap="5px" alignItems="center">
+              Pending reviews of :{" "}
+              {pendingMTEReviews?.length
+                ? pendingMTEReviews?.map((item: any) => (
+                    <Chip
+                      key={item.id}
+                      label={item.firstName + " " + item.lastName}
+                      variant="outlined"
+                    />
+                  ))
+                : 0}
+            </Box>
+          ) : (
+            <Box display="flex" gap="5px" alignItems="center">
+              Pending By :{" "}
+              {pendingReviewers?.length
+                ? pendingReviewers?.map((item: any) => (
+                    <Chip
+                      key={item.id}
+                      label={
+                        item.firstName +
+                        " " +
+                        item.lastName +
+                        " " +
+                        "(" +
+                        item.email +
+                        ")"
+                      }
+                      variant="outlined"
+                    />
+                  ))
+                : 0}
+            </Box>
+          )}
+        </Box>
+
+        {Object.keys(feedbackResponseList).length === 0 ? (
+          <SkeletonTable
+            variant="rounded"
+            width="100%"
+            sx={{ marginTop: "20px" }}
+            height="calc(100vh - 180px)"
+          />
+        ) : feedbackResponseList.hasOwnProperty("responses") &&
+          feedbackResponseList?.feedback_type === MTE ? (
+          <>
+            <MTEtable
+              feedbackResponseList={feedbackResponseList}
+              handleOpenTable={handleOpenTable}
+              open={open}
+              openId={openId}
+              openAllCollapses={openAllCollapses}
+            />
+          </>
+        ) : feedbackResponseList.hasOwnProperty("responses") &&
+          feedbackResponseList?.responses?.length &&
+          feedbackResponseList?.feedback_type === ETM ? (
+          <>
+            <ETMtable
+              feedbackResponseList={feedbackResponseList}
+              handleOpenTable={handleOpenTable}
+              open={open}
+              openId={openId}
+              openAllCollapses={openAllCollapses}
+            />
+          </>
         ) : (
-          <Box display="flex" gap="5px" alignItems="center">
-            Pending By :{" "}
-            {pendingReviewers?.length
-              ? pendingReviewers?.map((item: any) => (
-                  <Chip
-                    key={item.id}
-                    label={
-                      item.firstName +
-                      " " +
-                      item.lastName +
-                      " " +
-                      "(" +
-                      item.email +
-                      ")"
-                    }
-                    variant="outlined"
-                  />
-                ))
-              : 0}
-          </Box>
+          <NoDataFound text="No responses yet!" />
         )}
       </Box>
-
-      {Object.keys(feedbackResponseList).length === 0 ? (
-        <SkeletonTable
-          variant="rounded"
-          width="100%"
-          sx={{ marginTop: "20px" }}
-          height="calc(100vh - 180px)"
-        />
-      ) : feedbackResponseList.hasOwnProperty("responses") &&
-        feedbackResponseList?.feedback_type === MTE ? (
-        <>
-          <MTEtable
-            feedbackResponseList={feedbackResponseList}
-            handleOpenTable={handleOpenTable}
-            open={open}
-            openId={openId}
-          />
-        </>
-      ) : feedbackResponseList.hasOwnProperty("responses") &&
-        feedbackResponseList?.responses?.length &&
-        feedbackResponseList?.feedback_type === ETM ? (
-        <>
-          <ETMtable
-            feedbackResponseList={feedbackResponseList}
-            handleOpenTable={handleOpenTable}
-            open={open}
-            openId={openId}
-          />
-        </>
-      ) : (
-        <NoDataFound text="No responses yet!" />
-      )}
     </>
   );
 };

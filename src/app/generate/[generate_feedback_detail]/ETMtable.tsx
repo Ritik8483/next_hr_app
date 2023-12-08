@@ -29,8 +29,14 @@ const tableSubHeadings = [
   "Feedback Type",
 ];
 
-const ETMtable = (props:any) => {
-  const { feedbackResponseList, handleOpenTable, open, openId } = props;
+const ETMtable = (props: any) => {
+  const {
+    feedbackResponseList,
+    handleOpenTable,
+    open,
+    openId,
+    openAllCollapses,
+  } = props;
 
   return (
     <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
@@ -84,7 +90,7 @@ const ETMtable = (props:any) => {
                     colSpan={6}
                   >
                     <Collapse
-                      in={openId === row.id && open}
+                      in={openAllCollapses || (openId === row.id && open)}
                       timeout="auto"
                       unmountOnExit
                     >

@@ -19,7 +19,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
 import { useDispatch, useSelector } from "react-redux";
-import { getAuth, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { storeUsersLoginToken } from "@/redux/slices/authSlice";
 import { ETM, MTE } from "@/constants/constant";
 
@@ -66,6 +66,16 @@ const FillFeedbackForm = () => {
       };
     }
   };
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const uid = user.uid;
+      } else {
+        router.push(`/user-login?id=${feedbackId}`);
+      }
+    });
+  }, []);
 
   const getFeedbacksData = async () => {
     try {
@@ -337,7 +347,7 @@ const FillFeedbackForm = () => {
     formQueDetails?.responses?.map(
       (it: any) => feedbackReviewerEmail?.email === it.email && it?.userInfo?.id
     );
-    
+
   return (
     <>
       <Box

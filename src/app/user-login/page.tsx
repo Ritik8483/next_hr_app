@@ -52,6 +52,10 @@ const UserLogin = () => {
   const [allUsersDetails, setAllUsersDetails] = useState<any>([]);
   const paramsId = params?.get("id");
 
+  const userCreds = useSelector(
+    (state: any) => state.authSlice.userLoginDetails
+  );
+
   const {
     register,
     handleSubmit,
@@ -260,24 +264,12 @@ const UserLogin = () => {
   };
 
   useEffect(() => {
-    onAuthStateChanged(auth, (user: any) => {
-      if (
-        user &&
-        user.emailVerified &&
-        user.email !== "ritik.chauhan@quokkalabs.com"
-      ) {
-        const filteredUser = allUsersDetails?.filter(
-          (item: any) => item.email === user.email
-        );
-        dispatch(storeUsersLoginToken(filteredUser[0]));
-        if (filteredUser[0]) {
-          router.push(`/form?id=${paramsId}`);
-        }
-      } else {
-        router.push(`/user-login?id=${paramsId}`);
-      }
-    });
-  }, [allUsersDetails?.length]);
+    if (userCreds?.email) {
+      router.push(`/form?id=${paramsId}`);
+    } else {
+      router.push(`/user-login?id=${paramsId}`);
+    }
+  }, []);
 
   const handleForgotForm = async (data: any) => {
     const querySnapshot: any = await getDocs(collection(db, "signup_users"));
