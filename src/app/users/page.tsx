@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { styled } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
@@ -76,42 +74,46 @@ const Users = () => {
   };
 
   const getData = async () => {
-    if (debouncedValue.length > 0) {
-      const usersRef = collection(db, "users");
-      const querySearch = query(
-        usersRef,
-        or(
-          where("firstName", "==", debouncedValue),
-          where("email", "==", debouncedValue)
-        )
-      );
-      const querySnapshot = await getDocs(querySearch);
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setTotalCount(total);
-      setUsersList(singleUserArr);
-    } else {
-      const querySnapshot: any = await getDocs(collection(db, "users"));
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      setTotalCount(total);
-      const allUsersData = querySnapshot?.docs
-        ?.reverse()
-        ?.slice(prevOffset, offset)
-        ?.map((doc: any) => {
+    try {
+      if (debouncedValue.length > 0) {
+        const usersRef = collection(db, "users");
+        const querySearch = query(
+          usersRef,
+          or(
+            where("firstName", "==", debouncedValue),
+            where("email", "==", debouncedValue)
+          )
+        );
+        const querySnapshot = await getDocs(querySearch);
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
           return {
             id: doc.id,
             ...doc.data(),
           };
         });
+        setTotalCount(total);
+        setUsersList(singleUserArr);
+      } else {
+        const querySnapshot: any = await getDocs(collection(db, "users"));
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        setTotalCount(total);
+        const allUsersData = querySnapshot?.docs
+          ?.reverse()
+          ?.slice(prevOffset, offset)
+          ?.map((doc: any) => {
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          });
 
-      setUsersList(allUsersData);
+        setUsersList(allUsersData);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
 
@@ -128,25 +130,29 @@ const Users = () => {
   };
 
   const handleDeleteUser = async () => {
-    await deleteDoc(doc(db, "users", openAlertBox.data.id));
-    dispatch(
-      openAlert({
-        type: "success",
-        message: "User deleted successfully!",
-      })
-    );
-    if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-      setOffset(offset === 10 ? 10 : offset - 10);
-      setPrevOffset(
-        prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+    try {
+      await deleteDoc(doc(db, "users", openAlertBox.data.id));
+      dispatch(
+        openAlert({
+          type: "success",
+          message: "User deleted successfully!",
+        })
       );
-      setCurrentPage(
-        totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-          ? currentPage - 1
-          : currentPage
-      );
+      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
+        setOffset(offset === 10 ? 10 : offset - 10);
+        setPrevOffset(
+          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+        );
+        setCurrentPage(
+          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
+            ? currentPage - 1
+            : currentPage
+        );
+      }
+      setOpenAlertBox(false);
+    } catch (error) {
+      console.log("error", error);
     }
-    setOpenAlertBox(false);
   };
 
   const handleRowClick = (id: string) => {

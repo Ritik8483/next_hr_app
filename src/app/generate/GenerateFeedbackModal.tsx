@@ -17,7 +17,6 @@ import {
   ListItemText,
   ListSubheader,
   MenuItem,
-  TextField,
 } from "@mui/material";
 import Buttons from "@/components/resuseables/Buttons";
 import OutlinedInput from "@mui/material/OutlinedInput";
@@ -58,7 +57,7 @@ const MenuProps = {
   },
 };
 
-const feedbackTypes = ["Employees to Manager", "Manager to Employees"]; //employees are giving feedback to manager about his performance
+const feedbackTypes = ["Employees to Manager", "Manager to Employees"];
 
 const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const { onClose, feedbackFormModal, feedbackFormDetail } = props;
@@ -140,134 +139,140 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       feedbackFormDetail?.feedback_type === MTE &&
       feedbackFormDetail?.review?.map((it: any) => it.email || it.teamEmail);
 
-    if (debouncedReview.length > 0 || debouncedReviewer.length > 0) {
-      const usersRef = collection(db, "users");
-      const querySearch = query(
-        usersRef,
-        or(where("firstName", "==", debouncedReviewer || debouncedReview))
-      );
-
-      const querySnapshot = await getDocs(querySearch);
-
-      const usersArr: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setUsersList(usersArr);
-    } else {
-      const querySnapshot: any = await getDocs(collection(db, "users"));
-      const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      const resp = allUsersData?.filter((item: any) =>
-        feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.email)
-      );
-
-      if (feedbackFormDetail?.id && !reviewerType.length) {
-        reviewerArrOfUsers = resp;
-        setReviewerType([...resp]);
-      }
-      if (
-        feedbackFormDetail?.id &&
-        feedbackFormDetail?.feedback_type === MTE &&
-        !multipleReviewType.length
-      ) {
-        const response = allUsersData?.filter((item: any) =>
-          filteredReviews?.includes(item.email)
+    try {
+      if (debouncedReview.length > 0 || debouncedReviewer.length > 0) {
+        const usersRef = collection(db, "users");
+        const querySearch = query(
+          usersRef,
+          or(where("firstName", "==", debouncedReviewer || debouncedReview))
         );
 
-        multipleReviewArr = response;
-        setMultipleReviewType([...response]);
-      }
-      setUsersList(allUsersData);
-    }
+        const querySnapshot = await getDocs(querySearch);
 
-    if (
-      (feedbackFormType === MTE && debouncedReview.length > 0) ||
-      debouncedReviewer.length > 0
-    ) {
-      const usersRef = collection(db, "roles");
-      const querySearch = query(
-        usersRef,
-        or(where("teamName", "==", debouncedReview || debouncedReviewer))
-      );
-      const querySnapshot = await getDocs(querySearch);
-      const allRolesData: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setRolesList(allRolesData);
-    } else {
-      const queryRoles: any = await getDocs(collection(db, "roles"));
-      const allRolesData = queryRoles?.docs?.reverse()?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-
-      const response = allRolesData?.filter((item: any) =>
-        feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.teamEmail)
-      );
-
-      if (feedbackFormDetail?.id && !reviewerType.length) {
-        setReviewerType([...reviewerArrOfUsers, ...response]);
-        reviewerArrOfUsers = [];
-      }
-
-      if (
-        feedbackFormDetail?.id &&
-        feedbackFormDetail?.feedback_type === MTE &&
-        !multipleReviewType.length
-      ) {
-        const responseReviews = allRolesData?.filter((item: any) =>
-          filteredReviews?.includes(item.teamEmail)
-        );
-
-        setMultipleReviewType([...multipleReviewArr, ...responseReviews]);
-        multipleReviewArr = [];
-      }
-      setRolesList(allRolesData);
-    }
-
-    if (debouncedFeedbacks.length > 0) {
-      const usersRef = collection(db, "feedbacks");
-      const querySearch = query(
-        usersRef,
-        or(where("feedbackName", "==", debouncedFeedbacks))
-      );
-      const querySnapshot = await getDocs(querySearch);
-      const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setFeedbacksList(feedbacksArr);
-    } else {
-      const queryFeedbacks: any = await getDocs(collection(db, "feedbacks"));
-      const allFeedbacksData = queryFeedbacks?.docs
-        ?.reverse()
-        ?.map((doc: any) => {
+        const usersArr: any = querySnapshot?.docs?.map((doc: any) => {
           return {
             id: doc.id,
             ...doc.data(),
           };
         });
-      const resp = allFeedbacksData?.filter((item: any) =>
-        feedbackFormDetail?.feedback_parameters?.includes(item.id)
-      );
-      if (feedbackFormDetail?.id && !feedbackParametersArr.length) {
-        setFeedbackParametersArr(resp);
+        setUsersList(usersArr);
+      } else {
+        const querySnapshot: any = await getDocs(collection(db, "users"));
+        const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        });
+        const resp = allUsersData?.filter((item: any) =>
+          feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.email)
+        );
+
+        if (feedbackFormDetail?.id && !reviewerType.length) {
+          reviewerArrOfUsers = resp;
+          setReviewerType([...resp]);
+        }
+        if (
+          feedbackFormDetail?.id &&
+          feedbackFormDetail?.feedback_type === MTE &&
+          !multipleReviewType.length
+        ) {
+          const response = allUsersData?.filter((item: any) =>
+            filteredReviews?.includes(item.email)
+          );
+
+          multipleReviewArr = response;
+          setMultipleReviewType([...response]);
+        }
+        setUsersList(allUsersData);
       }
-      setFeedbacksList(allFeedbacksData);
+
+      if (
+        (feedbackFormType === MTE && debouncedReview.length > 0) ||
+        debouncedReviewer.length > 0
+      ) {
+        const usersRef = collection(db, "roles");
+        const querySearch = query(
+          usersRef,
+          or(where("teamName", "==", debouncedReview || debouncedReviewer))
+        );
+        const querySnapshot = await getDocs(querySearch);
+        const allRolesData: any = querySnapshot?.docs?.map((doc: any) => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        });
+        setRolesList(allRolesData);
+      } else {
+        const queryRoles: any = await getDocs(collection(db, "roles"));
+        const allRolesData = queryRoles?.docs?.reverse()?.map((doc: any) => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        });
+
+        const response = allRolesData?.filter((item: any) =>
+          feedbackFormDetail?.reviewerEmails
+            ?.split(",")
+            ?.includes(item.teamEmail)
+        );
+
+        if (feedbackFormDetail?.id && !reviewerType.length) {
+          setReviewerType([...reviewerArrOfUsers, ...response]);
+          reviewerArrOfUsers = [];
+        }
+
+        if (
+          feedbackFormDetail?.id &&
+          feedbackFormDetail?.feedback_type === MTE &&
+          !multipleReviewType.length
+        ) {
+          const responseReviews = allRolesData?.filter((item: any) =>
+            filteredReviews?.includes(item.teamEmail)
+          );
+
+          setMultipleReviewType([...multipleReviewArr, ...responseReviews]);
+          multipleReviewArr = [];
+        }
+        setRolesList(allRolesData);
+      }
+
+      if (debouncedFeedbacks.length > 0) {
+        const usersRef = collection(db, "feedbacks");
+        const querySearch = query(
+          usersRef,
+          or(where("feedbackName", "==", debouncedFeedbacks))
+        );
+        const querySnapshot = await getDocs(querySearch);
+        const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        });
+        setFeedbacksList(feedbacksArr);
+      } else {
+        const queryFeedbacks: any = await getDocs(collection(db, "feedbacks"));
+        const allFeedbacksData = queryFeedbacks?.docs
+          ?.reverse()
+          ?.map((doc: any) => {
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          });
+        const resp = allFeedbacksData?.filter((item: any) =>
+          feedbackFormDetail?.feedback_parameters?.includes(item.id)
+        );
+        if (feedbackFormDetail?.id && !feedbackParametersArr.length) {
+          setFeedbackParametersArr(resp);
+        }
+        setFeedbacksList(allFeedbacksData);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
 
@@ -321,29 +326,33 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       reviewerEmails: filteredEmails.toString(),
     };
 
-    if (feedbackFormDetail.id) {
-      const userId = doc(db, "feedback_form", feedbackFormDetail.id);
-      await updateDoc(userId, feedbackFormData);
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Feedback form updated successfully!",
-        })
-      );
-      onClose();
-    } else {
-      await setDoc(
-        doc(db, "feedback_form", Date.now().toString(36)),
-        feedbackFormData
-      );
+    try {
+      if (feedbackFormDetail.id) {
+        const userId = doc(db, "feedback_form", feedbackFormDetail.id);
+        await updateDoc(userId, feedbackFormData);
+        dispatch(
+          openAlert({
+            type: "success",
+            message: "Feedback form updated successfully!",
+          })
+        );
+        onClose();
+      } else {
+        await setDoc(
+          doc(db, "feedback_form", Date.now().toString(36)),
+          feedbackFormData
+        );
 
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Feedback form created successfully!",
-        })
-      );
-      onClose();
+        dispatch(
+          openAlert({
+            type: "success",
+            message: "Feedback form created successfully!",
+          })
+        );
+        onClose();
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
 

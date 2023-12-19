@@ -26,51 +26,52 @@ const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting, isSubmitted },
   } = useForm<any>({
     resolver: yupResolver(addUserSchema),
     defaultValues: userDetail,
   });
 
-  console.log("isSubmitting", isSubmitting);
 
   const handleSubmitForm = async (data: any) => {
     const { firstName, lastName, email, designation } = data;
-    console.log("data", data);
-    if (userDetail.id) {
-      if (
-        firstName === userDetail.firstName &&
-        lastName === userDetail.lastName &&
-        email === userDetail.email &&
-        designation === userDetail.designation
-      )
-        return;
-      else {
-        const userId = doc(db, "users", userDetail.id);
-        await updateDoc(userId, data);
+    try {
+      if (userDetail.id) {
+        if (
+          firstName === userDetail.firstName &&
+          lastName === userDetail.lastName &&
+          email === userDetail.email &&
+          designation === userDetail.designation
+        )
+          return;
+        else {
+          const userId = doc(db, "users", userDetail.id);
+          await updateDoc(userId, data);
+          dispatch(
+            openAlert({
+              type: "success",
+              message: "User updated successfully!",
+            })
+          );
+          onClose();
+        }
+      } else {
+        await setDoc(doc(db, "users", Date.now().toString(36)), {
+          firstName,
+          lastName,
+          email,
+          designation,
+        });
         dispatch(
           openAlert({
             type: "success",
-            message: "User updated successfully!",
+            message: "User added successfully!",
           })
         );
         onClose();
       }
-    } else {
-      await setDoc(doc(db, "users", Date.now().toString(36)), {
-        firstName,
-        lastName,
-        email,
-        designation,
-      });
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "User added successfully!",
-        })
-      );
-      onClose();
+    } catch (error) {
+      console.log("error", error);
     }
   };
 

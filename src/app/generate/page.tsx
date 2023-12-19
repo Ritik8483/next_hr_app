@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useReducer } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Chip,
@@ -181,10 +181,10 @@ const GenerateFeedback = () => {
     setIsSubmitting(true);
     emailjs
       .sendForm(
-        "service_45awfi4",
-        "template_7qrcsmx",
+        `${process.env.NEXT_PUBLIC_EMAIL_SERVICE}`,
+        `${process.env.NEXT_PUBLIC_EMAIL_TEMPLATE}`,
         formRef?.current[index],
-        "jJk8j_-FYjBGKH0Kv"
+        `${process.env.NEXT_PUBLIC_EMAIL_KEY}`
       )
       .then(
         (result) => {
@@ -221,25 +221,29 @@ const GenerateFeedback = () => {
   };
 
   const handleDeleteFeedbackForm = async () => {
-    await deleteDoc(doc(db, "feedback_form", openAlertBox.data.id));
-    dispatch(
-      openAlert({
-        type: "success",
-        message: "Feedback form deleted successfully!",
-      })
-    );
-    if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-      setOffset(offset === 10 ? 10 : offset - 10);
-      setPrevOffset(
-        prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+    try {
+      await deleteDoc(doc(db, "feedback_form", openAlertBox.data.id));
+      dispatch(
+        openAlert({
+          type: "success",
+          message: "Feedback form deleted successfully!",
+        })
       );
-      setCurrentPage(
-        totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-          ? currentPage - 1
-          : currentPage
-      );
+      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
+        setOffset(offset === 10 ? 10 : offset - 10);
+        setPrevOffset(
+          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+        );
+        setCurrentPage(
+          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
+            ? currentPage - 1
+            : currentPage
+        );
+      }
+      setOpenAlertBox(false);
+    } catch (error) {
+      console.log("error", error);
     }
-    setOpenAlertBox(false);
   };
 
   useEffect(() => {
@@ -389,7 +393,7 @@ const GenerateFeedback = () => {
                         />
                         <input
                           name="message"
-                          defaultValue={`http://localhost:3000/user-login?id=${item.id}`}
+                          defaultValue={`${process.env.NEXT_PUBLIC_LOCAL_SERVER}user-login?id=${item.id}`}
                           style={{ visibility: "hidden" }}
                         />
 

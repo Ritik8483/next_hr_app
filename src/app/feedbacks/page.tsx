@@ -76,38 +76,42 @@ const Feedbacks = () => {
   };
 
   const getFeedbacksData = async () => {
-    if (debouncedValue.length > 0) {
-      const usersRef = collection(db, "feedbacks");
-      const querySearch = query(
-        usersRef,
-        or(where("feedbackName", "==", debouncedValue))
-      );
-      const querySnapshot = await getDocs(querySearch);
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setTotalCount(total);
-      setFeedbacksList(feedbacksArr);
-    } else {
-      const querySnapshot: any = await getDocs(collection(db, "feedbacks"));
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      setTotalCount(total);
-      const allFeedbacksData = querySnapshot?.docs
-        ?.reverse()
-        ?.slice(prevOffset, offset)
-        ?.map((doc: any) => {
+    try {
+      if (debouncedValue.length > 0) {
+        const usersRef = collection(db, "feedbacks");
+        const querySearch = query(
+          usersRef,
+          or(where("feedbackName", "==", debouncedValue))
+        );
+        const querySnapshot = await getDocs(querySearch);
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
           return {
             id: doc.id,
             ...doc.data(),
           };
         });
-      setFeedbacksList(allFeedbacksData);
+        setTotalCount(total);
+        setFeedbacksList(feedbacksArr);
+      } else {
+        const querySnapshot: any = await getDocs(collection(db, "feedbacks"));
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        setTotalCount(total);
+        const allFeedbacksData = querySnapshot?.docs
+          ?.reverse()
+          ?.slice(prevOffset, offset)
+          ?.map((doc: any) => {
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          });
+        setFeedbacksList(allFeedbacksData);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
   useEffect(() => {
@@ -128,25 +132,29 @@ const Feedbacks = () => {
   };
 
   const handleDeleteFeedback = async () => {
-    await deleteDoc(doc(db, "feedbacks", openAlertBox.data.id));
-    dispatch(
-      openAlert({
-        type: "success",
-        message: "Feedback deleted successfully!",
-      })
-    );
-    if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-      setOffset(offset === 10 ? 10 : offset - 10);
-      setPrevOffset(
-        prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+    try {
+      await deleteDoc(doc(db, "feedbacks", openAlertBox.data.id));
+      dispatch(
+        openAlert({
+          type: "success",
+          message: "Feedback deleted successfully!",
+        })
       );
-      setCurrentPage(
-        totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-          ? currentPage - 1
-          : currentPage
-      );
+      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
+        setOffset(offset === 10 ? 10 : offset - 10);
+        setPrevOffset(
+          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+        );
+        setCurrentPage(
+          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
+            ? currentPage - 1
+            : currentPage
+        );
+      }
+      setOpenAlertBox(false);
+    } catch (error) {
+      console.log("error", error);
     }
-    setOpenAlertBox(false);
   };
 
   return (

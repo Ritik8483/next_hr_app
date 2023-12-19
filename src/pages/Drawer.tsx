@@ -149,7 +149,7 @@ export default function SidebarDrawer({ children }: any) {
     const str = text.toLowerCase();
     localStorage.removeItem("generateId");
     if (pathNameArr?.length > 2) {
-      router.push(`http://localhost:3000/${str}`);
+      router.push(`${process.env.NEXT_PUBLIC_LOCAL_SERVER}${str}`);
       setOption(text);
       localStorage.setItem("sidebarText", JSON.stringify(text));
       dispatch(storeSidebarOption(text));

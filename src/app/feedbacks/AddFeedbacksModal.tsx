@@ -62,31 +62,35 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
 
   const handleSubmitForm = async (data: any) => {
     if (!feedbackParameterType) return;
-    if (feedbackDetail.id) {
-      const userId = doc(db, "feedbacks", feedbackDetail.id);
-      await updateDoc(userId, {
-        ...data,
-        feedback_parameter_type: feedbackParameterType,
-      });
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Feedback updated successfully!",
-        })
-      );
-      onClose();
-    } else {
-      await setDoc(doc(db, "feedbacks", Date.now().toString(36)), {
-        ...data,
-        feedback_parameter_type: feedbackParameterType,
-      });
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Feedback added successfully!",
-        })
-      );
-      onClose();
+    try {
+      if (feedbackDetail.id) {
+        const userId = doc(db, "feedbacks", feedbackDetail.id);
+        await updateDoc(userId, {
+          ...data,
+          feedback_parameter_type: feedbackParameterType,
+        });
+        dispatch(
+          openAlert({
+            type: "success",
+            message: "Feedback updated successfully!",
+          })
+        );
+        onClose();
+      } else {
+        await setDoc(doc(db, "feedbacks", Date.now().toString(36)), {
+          ...data,
+          feedback_parameter_type: feedbackParameterType,
+        });
+        dispatch(
+          openAlert({
+            type: "success",
+            message: "Feedback added successfully!",
+          })
+        );
+        onClose();
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
 

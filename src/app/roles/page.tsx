@@ -64,41 +64,45 @@ const Roles = () => {
   };
 
   const getRolesData = async () => {
-    if (debouncedValue.length > 0) {
-      const usersRef = collection(db, "roles");
-      const querySearch = query(
-        usersRef,
-        or(
-          where("teamName", "==", debouncedValue),
-          where("teamEmail", "==", debouncedValue)
-        )
-      );
-      const querySnapshot = await getDocs(querySearch);
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setTotalCount(total);
-      setRolesList(singleUserArr);
-    } else {
-      const querySnapshot: any = await getDocs(collection(db, "roles"));
-      const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-      setTotalNoOfItems(querySnapshot?.docs?.length);
-      setTotalCount(total);
-      const allRolesData = querySnapshot?.docs
-        ?.reverse()
-        ?.slice(prevOffset, offset)
-        ?.map((doc: any) => {
+    try {
+      if (debouncedValue.length > 0) {
+        const usersRef = collection(db, "roles");
+        const querySearch = query(
+          usersRef,
+          or(
+            where("teamName", "==", debouncedValue),
+            where("teamEmail", "==", debouncedValue)
+          )
+        );
+        const querySnapshot = await getDocs(querySearch);
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
           return {
             id: doc.id,
             ...doc.data(),
           };
         });
-      setRolesList(allRolesData);
+        setTotalCount(total);
+        setRolesList(singleUserArr);
+      } else {
+        const querySnapshot: any = await getDocs(collection(db, "roles"));
+        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
+        setTotalNoOfItems(querySnapshot?.docs?.length);
+        setTotalCount(total);
+        const allRolesData = querySnapshot?.docs
+          ?.reverse()
+          ?.slice(prevOffset, offset)
+          ?.map((doc: any) => {
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          });
+        setRolesList(allRolesData);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
   useEffect(() => {
@@ -121,25 +125,29 @@ const Roles = () => {
   };
 
   const handleDeleteRole = async () => {
-    await deleteDoc(doc(db, "roles", openAlertBox.data.id));
-    dispatch(
-      openAlert({
-        type: "success",
-        message: "Role deleted successfully!",
-      })
-    );
-    if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-      setOffset(offset === 10 ? 10 : offset - 10);
-      setPrevOffset(
-        prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+    try {
+      await deleteDoc(doc(db, "roles", openAlertBox.data.id));
+      dispatch(
+        openAlert({
+          type: "success",
+          message: "Role deleted successfully!",
+        })
       );
-      setCurrentPage(
-        totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-          ? currentPage - 1
-          : currentPage
-      );
+      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
+        setOffset(offset === 10 ? 10 : offset - 10);
+        setPrevOffset(
+          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+        );
+        setCurrentPage(
+          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
+            ? currentPage - 1
+            : currentPage
+        );
+      }
+      setOpenAlertBox(false);
+    } catch (error) {
+      console.log("error", error);
     }
-    setOpenAlertBox(false);
   };
 
   const handleRowClick = (id: string) => {

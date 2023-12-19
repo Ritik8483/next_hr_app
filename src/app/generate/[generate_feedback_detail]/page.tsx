@@ -4,7 +4,7 @@ import NoDataFound from "@/components/resuseables/NoDataFound";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import { db } from "@/firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams,  useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -29,7 +29,6 @@ const GenerateFeedbackDetail = () => {
   const [open, setOpen] = useState(false);
   const [openAllCollapses, setOpenAllCollapses] = useState(false);
   const [openId, setOpenId] = useState<string>("");
-  const pathName = usePathname();
 
   const getFeedbacksData = async () => {
     try {

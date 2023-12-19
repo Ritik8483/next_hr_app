@@ -15,7 +15,7 @@ import Buttons from "@/components/resuseables/Buttons";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Select from "@mui/material/Select";
 import Checkbox from "@mui/material/Checkbox";
 import {
   collection,
@@ -56,7 +56,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting, isSubmitted },
   } = useForm<any>({
     resolver: yupResolver(addRolesSchema),
@@ -67,53 +66,61 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
     if (!personName.length) return;
     const { teamName, teamEmail } = data;
     setValidateUsers(false);
-    if (rolesDetail.id) {
-      const userId = doc(db, "roles", rolesDetail.id);
-      await updateDoc(userId, {
-        teamName,
-        teamEmail,
-        teamUsers: personName?.map((it: any) => ({
-          id: it.id,
-          firstName: it.firstName,
-          lastName: it.lastName,
-        })),
-      });
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Role updated successfully!",
-        })
-      );
-      onClose();
-    } else {
-      await setDoc(doc(db, "roles", Date.now().toString(36)), {
-        teamName,
-        teamEmail,
-        teamUsers: personName?.map((it: any) => ({
-          id: it.id,
-          firstName: it.firstName,
-          lastName: it.lastName,
-        })),
-      });
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Role added successfully!",
-        })
-      );
-      onClose();
+    try {
+      if (rolesDetail.id) {
+        const userId = doc(db, "roles", rolesDetail.id);
+        await updateDoc(userId, {
+          teamName,
+          teamEmail,
+          teamUsers: personName?.map((it: any) => ({
+            id: it.id,
+            firstName: it.firstName,
+            lastName: it.lastName,
+          })),
+        });
+        dispatch(
+          openAlert({
+            type: "success",
+            message: "Role updated successfully!",
+          })
+        );
+        onClose();
+      } else {
+        await setDoc(doc(db, "roles", Date.now().toString(36)), {
+          teamName,
+          teamEmail,
+          teamUsers: personName?.map((it: any) => ({
+            id: it.id,
+            firstName: it.firstName,
+            lastName: it.lastName,
+          })),
+        });
+        dispatch(
+          openAlert({
+            type: "success",
+            message: "Role added successfully!",
+          })
+        );
+        onClose();
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
 
   const getUsersData = async () => {
-    const querySnapshot: any = await getDocs(collection(db, "users"));
-    const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    });
-    setUsersList(allUsersData);
+    try {
+      const querySnapshot: any = await getDocs(collection(db, "users"));
+      const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      });
+      setUsersList(allUsersData);
+    } catch (error) {
+      console.log("error", error);
+    }
   };
   useEffect(() => {
     getUsersData();

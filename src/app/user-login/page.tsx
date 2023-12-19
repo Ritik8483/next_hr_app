@@ -20,7 +20,6 @@ import Buttons from "@/components/resuseables/Buttons";
 import {
   createUserWithEmailAndPassword,
   getAuth,
-  onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -59,7 +58,6 @@ const UserLogin = () => {
   const {
     register,
     handleSubmit,
-    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<any>({
@@ -71,23 +69,27 @@ const UserLogin = () => {
   });
 
   const getAllUsers = async () => {
-    const docRef = doc(db, "feedback_form", paramsId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      if (docSnap.data()) {
-        setFeedbackResponses(docSnap.data());
+    try {
+      const docRef = doc(db, "feedback_form", paramsId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        if (docSnap.data()) {
+          setFeedbackResponses(docSnap.data());
+        }
       }
+      const querySnapshot: any = await getDocs(collection(db, "users"));
+      const allUsersEmailData = querySnapshot?.docs?.map(
+        (doc: any) => doc.data().email
+      );
+      const allUsers = querySnapshot?.docs?.map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAllUsersDetails(allUsers);
+      setUsersEmail(allUsersEmailData);
+    } catch (error) {
+      console.log("error", error);
     }
-    const querySnapshot: any = await getDocs(collection(db, "users"));
-    const allUsersEmailData = querySnapshot?.docs?.map(
-      (doc: any) => doc.data().email
-    );
-    const allUsers = querySnapshot?.docs?.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setAllUsersDetails(allUsers);
-    setUsersEmail(allUsersEmailData);
   };
 
   useEffect(() => {
@@ -184,82 +186,88 @@ const UserLogin = () => {
         ...doc.data(),
       };
     });
-    if (usersEmail?.includes(email)) {
-      if (
-        auth?.currentUser?.emailVerified ??
-        allRolesData[0]?.signup_users?.includes(email)
-      ) {
-        try {
-          if (
-            feedbackResponses?.responses?.some((it: any) => it.email === email)
-          ) {
-            dispatch(
-              openAlert({
-                type: "error",
-                message: "Form already Submitted by you",
-              })
-            );
-            return;
-          } else {
-            const result: any = await signInWithEmailAndPassword(
-              auth,
-              email,
-              password
-            );
-
-            if (result?.user?.accessToken) {
-              const filteredUser = allUsersDetails?.filter(
-                (item: any) => item.email === result?.user?.email
+    try {
+      if (usersEmail?.includes(email)) {
+        if (
+          auth?.currentUser?.emailVerified ??
+          allRolesData[0]?.signup_users?.includes(email)
+        ) {
+          try {
+            if (
+              feedbackResponses?.responses?.some(
+                (it: any) => it.email === email
+              )
+            ) {
+              dispatch(
+                openAlert({
+                  type: "error",
+                  message: "Form already Submitted by you",
+                })
               );
-              dispatch(storeUsersLoginToken(filteredUser[0]));
-              router.push(`/form?id=${paramsId}`);
-              reset();
+              return;
+            } else {
+              const result: any = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+              );
+
+              if (result?.user?.accessToken) {
+                const filteredUser = allUsersDetails?.filter(
+                  (item: any) => item.email === result?.user?.email
+                );
+                dispatch(storeUsersLoginToken(filteredUser[0]));
+                router.push(`/form?id=${paramsId}`);
+                reset();
+              }
+            }
+          } catch (error: any) {
+            console.log("error", error.message);
+            if (error.code === "auth/invalid-login-credentials") {
+              dispatch(
+                openAlert({
+                  type: "error",
+                  message: "Invalid Credentials",
+                })
+              );
+            } else {
+              dispatch(
+                openAlert({
+                  type: "error",
+                  message: error.message,
+                })
+              );
             }
           }
-        } catch (error: any) {
-          console.log("error", error.message);
-          if (error.code === "auth/invalid-login-credentials") {
+        } else {
+          if (!allRolesData[0]?.signup_users?.includes(email)) {
             dispatch(
               openAlert({
                 type: "error",
-                message: "Invalid Credentials",
+                message: "Email not found,please signup",
               })
             );
           } else {
+            // setActiveState(!activeState)
             dispatch(
               openAlert({
                 type: "error",
-                message: error.message,
+                message:
+                  "Please verify your email address and try again after refreshing",
               })
             );
           }
         }
       } else {
-        if (!allRolesData[0]?.signup_users?.includes(email)) {
-          dispatch(
-            openAlert({
-              type: "error",
-              message: "Email not found,please signup",
-            })
-          );
-        } else {
-          // setActiveState(!activeState)
-          dispatch(
-            openAlert({
-              type: "error",
-              message:
-                "Please verify your email address and try again after refreshing",
-            })
-          );
-        }
+        dispatch(
+          openAlert({
+            type: "error",
+            message: "Please enter official email address.",
+          })
+        );
       }
-    } else {
-      dispatch(
-        openAlert({
-          type: "error",
-          message: "Please enter official email address.",
-        })
-      );
+    } catch (error) {
+      console.log("error", error);
     }
   };
 
