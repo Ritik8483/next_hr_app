@@ -34,14 +34,7 @@ import { StyledTableCell, StyledTableRow } from "@/styles/styles";
 import NoDataFound from "@/components/resuseables/NoDataFound";
 import PaginationTable from "@/components/resuseables/Pagination";
 import { openAlert } from "@/redux/slices/snackBarSlice";
-
-const tableHeadings = [
-  "S.No.",
-  "Feedback Type",
-  "Feedback Name",
-  "Feedback Description",
-  "Actions",
-];
+import { tableHeadings } from "@/constants/constant";
 
 const Feedbacks = () => {
   const dispatch = useDispatch();

@@ -15,11 +15,7 @@ import { AppDispatch } from "@/redux/store";
 import Buttons from "@/components/resuseables/Buttons";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { formContainer } from "@/styles/styles";
-
-interface IFormInput {
-  email: string;
-  password: string;
-}
+import { IFormInput } from "@/interface/Interface";
 
 const Login = () => {
   const {
@@ -35,8 +31,6 @@ const Login = () => {
   const router = useRouter();
   const snackbar = useSelector((state: any) => state.snackbarSlice);
   const dispatch: AppDispatch = useDispatch();
-
-  // const accessToken = useSelector((state: any) => state.authSlice.userToken);
 
   const handleSubmitForm = async (data: IFormInput) => {
     if (data?.email === "ritik.chauhan@quokkalabs.com") {
