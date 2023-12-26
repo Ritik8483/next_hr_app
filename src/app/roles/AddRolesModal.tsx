@@ -27,6 +27,12 @@ import {
 import { db } from "@/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
+import {
+  useAddRoleMutation,
+  useGetAllUsersQuery,
+  useUpdateRoleMutation,
+} from "@/redux/api/api";
+import { addRoleCode, updateRoleCode } from "@/constants/constant";
 
 const ITEM_HEIGHT = 48;
 const MenuProps = {
@@ -47,11 +53,19 @@ interface AddRolesModalInterface {
 const AddRolesModal = (props: AddRolesModalInterface) => {
   const dispatch = useDispatch();
   const { openRolesModal, rolesDetail, onClose } = props;
-  const [personName, setPersonName] = useState<string[]>(
-    rolesDetail?.id ? rolesDetail?.teamUsers : []
+  const [personName, setPersonName] = useState<any>(
+    rolesDetail?._id ? rolesDetail?.teamUsers : []
   );
   const [usersList, setUsersList] = useState([]);
   const [validateUsers, setValidateUsers] = useState(false);
+
+  const payload = {
+    url: "users",
+  };
+
+  const { data } = useGetAllUsersQuery(payload);
+  const [addRole] = useAddRoleMutation();
+  const [updateRole] = useUpdateRoleMutation();
 
   const {
     register,
@@ -67,64 +81,63 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
     const { teamName, teamEmail } = data;
     setValidateUsers(false);
     try {
-      if (rolesDetail.id) {
-        const userId = doc(db, "roles", rolesDetail.id);
-        await updateDoc(userId, {
-          teamName,
-          teamEmail,
-          teamUsers: personName?.map((it: any) => ({
-            id: it.id,
-            firstName: it.firstName,
-            lastName: it.lastName,
-          })),
-        });
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "Role updated successfully!",
-          })
-        );
-        onClose();
+      if (rolesDetail._id) {
+        const payload = {
+          url: "roles",
+          id: rolesDetail._id,
+          body: { ...data, teamUsers: personName.map((it: any) => it._id) },
+        };
+        const resp = await updateRole(payload).unwrap();
+        if (resp?.code === updateRoleCode) {
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          onClose();
+        }
       } else {
-        await setDoc(doc(db, "roles", Date.now().toString(36)), {
-          teamName,
-          teamEmail,
-          teamUsers: personName?.map((it: any) => ({
-            id: it.id,
-            firstName: it.firstName,
-            lastName: it.lastName,
-          })),
-        });
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "Role added successfully!",
-          })
-        );
-        onClose();
+        const payload = {
+          url: "roles",
+          body: { ...data, userIds: personName.map((it: any) => it._id) },
+        };
+
+        console.log("payload", payload);
+
+        const resp = await addRole(payload).unwrap();
+        if (resp?.code === addRoleCode) {
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          onClose();
+        }
       }
     } catch (error) {
       console.log("error", error);
     }
   };
 
-  const getUsersData = async () => {
-    try {
-      const querySnapshot: any = await getDocs(collection(db, "users"));
-      const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-      setUsersList(allUsersData);
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-  useEffect(() => {
-    getUsersData();
-  }, []);
+  // const getUsersData = async () => {
+  //   try {
+  //     const querySnapshot: any = await getDocs(collection(db, "users"));
+  //     const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
+  //       return {
+  //         id: doc.id,
+  //         ...doc.data(),
+  //       };
+  //     });
+  //     setUsersList(allUsersData);
+  //   } catch (error) {
+  //     console.log("error", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   getUsersData();
+  // }, []);
 
   const handleValidateUsers = () => {
     if (personName.length) {
@@ -136,7 +149,7 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
 
   const handleCheckBoxes = (item: any) => {
     const personNames: any = [...personName];
-    const indexOfItem = personNames.findIndex((it: any) => it.id === item.id);
+    const indexOfItem = personNames.findIndex((it: any) => it._id === item._id);
 
     if (indexOfItem !== -1) {
       personNames.splice(indexOfItem, 1);
@@ -148,7 +161,9 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
     else setValidateUsers(true);
   };
 
-  const userIds = personName?.map((it: any) => it.id);
+  console.log("personNames", personName);
+
+  const userIds = personName?.map((it: any) => it._id);
 
   return (
     <Modal
@@ -160,7 +175,7 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
       <Box sx={modalStyles}>
         <CloseIcon onClick={onClose} sx={modalCrossStyle} />
         <Typography variant="h5" padding="10px 20px">
-          {rolesDetail.id ? "Update" : "Add"} Roles
+          {rolesDetail._id ? "Update" : "Add"} Roles
         </Typography>
         <Divider />
         <form onSubmit={handleSubmit(handleSubmitForm)}>
@@ -190,23 +205,32 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
                 multiple
                 sx={{ width: "100%" }}
                 value={personName}
-                label="PErson"
+                // label="PErson"
                 input={<OutlinedInput />}
-                renderValue={(selected) => {
+                renderValue={(selected: any) => {
+                  console.log("selected", selected);
+                  if (selected.length === 0) {
+                    return <>Select Person</>;
+                  }
                   const firstNames = selected?.map(
                     (it: any) => it.firstName + " " + it.lastName
                   );
 
                   return firstNames.join(", ");
                 }}
+                displayEmpty
                 MenuProps={MenuProps}
               >
-                {usersList?.map((item: any, index: number) => {
+                {data?.data?.map((item: any, index: number) => {
                   return (
-                    <MenuItem key={item.id} value={item}>
+                    <MenuItem
+                      onClick={() => handleCheckBoxes(item)}
+                      key={item._id}
+                      value={item}
+                    >
                       <Checkbox
-                        defaultChecked={userIds?.includes(item.id)}
-                        onClick={() => handleCheckBoxes(item)}
+                        defaultChecked={userIds?.includes(item._id)}
+                        checked={userIds?.includes(item._id)}
                       />
                       <ListItemText
                         primary={item.firstName + " " + item.lastName}
@@ -245,9 +269,9 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
               sx={{ textTransform: "capitalize" }}
               variant="contained"
               text={
-                rolesDetail.id && isSubmitting
+                rolesDetail._id && isSubmitting
                   ? "Updating..."
-                  : rolesDetail.id
+                  : rolesDetail._id
                   ? "Update"
                   : isSubmitting
                   ? "Submitting..."

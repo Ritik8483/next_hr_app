@@ -19,10 +19,13 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { addFeedbacksSchema } from "@/schema/schema";
 import Buttons from "@/components/resuseables/Buttons";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
+import {
+  useAddFeedbackParameterMutation,
+  useUpdateFeedbackParameterMutation,
+} from "@/redux/api/api";
+import { addFeedbackParameterCode, updateFeedbackParameterCode } from "@/constants/constant";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -44,6 +47,10 @@ const feedbackTypes = ["Score", "Description", "Both Score and Description"];
 
 const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
   const dispatch = useDispatch();
+
+  const [updateFeedbackParameter] = useUpdateFeedbackParameterMutation();
+  const [addFeedbackParameter] = useAddFeedbackParameterMutation();
+
   const { onClose, openFeedbackModal, feedbackDetail } = props;
   const [feedbackParameterType, setFeedbackParameterType] = useState(
     feedbackDetail?.feedback_parameter_type || ""
@@ -63,33 +70,59 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
   const handleSubmitForm = async (data: any) => {
     if (!feedbackParameterType) return;
     try {
-      if (feedbackDetail.id) {
-        const userId = doc(db, "feedbacks", feedbackDetail.id);
-        await updateDoc(userId, {
-          ...data,
-          feedback_parameter_type: feedbackParameterType,
-        });
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "Feedback updated successfully!",
-          })
-        );
-        onClose();
+      if (feedbackDetail._id) {
+        if (
+          feedbackDetail.feedbackName === data.feedbackName &&
+          feedbackDetail.feedbackDescription === data.feedbackDescription &&
+          feedbackDetail.feedback_parameter_type === feedbackParameterType
+        )
+          return;
+        const payload = {
+          url: "feedback-parameters",
+          id: feedbackDetail._id,
+          body: {
+            ...data,
+            feedback_parameter_type: feedbackParameterType,
+          },
+        };
+        const resp = await updateFeedbackParameter(payload).unwrap();
+        if (resp?.code === updateFeedbackParameterCode) {
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          onClose();
+        }
       } else {
-        await setDoc(doc(db, "feedbacks", Date.now().toString(36)), {
-          ...data,
-          feedback_parameter_type: feedbackParameterType,
-        });
+        const payload = {
+          url: "feedback-parameters",
+          body: {
+            ...data,
+            feedback_parameter_type: feedbackParameterType,
+          },
+        };
+        const resp = await addFeedbackParameter(payload).unwrap();
+        if (resp?.code === addFeedbackParameterCode) {
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          onClose();
+        }
+      }
+    } catch (error: any) {
+      if (error?.status === 400) {
         dispatch(
           openAlert({
-            type: "success",
-            message: "Feedback added successfully!",
+            type: "error",
+            message: error?.data?.error,
           })
         );
-        onClose();
       }
-    } catch (error) {
       console.log("error", error);
     }
   };
@@ -108,7 +141,7 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
       <Box sx={modalStyles}>
         <CloseIcon onClick={onClose} sx={modalCrossStyle} />
         <Typography variant="h5" padding="10px 20px">
-          {feedbackDetail.id ? "Update" : "Add"} Feedback
+          {feedbackDetail._id ? "Update" : "Add"} Feedback
         </Typography>
         <Divider />
         <form
@@ -190,9 +223,9 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
               variant="contained"
               onClick={() => setValidate(true)}
               text={
-                feedbackDetail.id && isSubmitting
+                feedbackDetail._id && isSubmitting
                   ? "Updating..."
-                  : feedbackDetail.id
+                  : feedbackDetail._id
                   ? "Update"
                   : isSubmitting
                   ? "Submitting..."

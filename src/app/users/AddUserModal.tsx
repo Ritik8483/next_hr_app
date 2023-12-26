@@ -7,13 +7,13 @@ import { modalCrossStyle, modalStyles } from "@/styles/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import InputField from "@/components/resuseables/InputField";
 import Buttons from "@/components/resuseables/Buttons";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { addUserSchema } from "@/schema/schema";
-import { db } from "@/firebaseConfig";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import { useDispatch } from "react-redux";
+import { useAddUserMutation, useUpdateUserMutation } from "@/redux/api/api";
+import { addUserCode, updateUserCode } from "@/constants/constant";
 
 interface AddUserModalInterface {
   open: boolean;
@@ -23,6 +23,7 @@ interface AddUserModalInterface {
 
 const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
   const dispatch = useDispatch();
+
   const {
     register,
     handleSubmit,
@@ -32,11 +33,13 @@ const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
     defaultValues: userDetail,
   });
 
+  const [addUser] = useAddUserMutation();
+  const [updateUser] = useUpdateUserMutation();
 
   const handleSubmitForm = async (data: any) => {
     const { firstName, lastName, email, designation } = data;
     try {
-      if (userDetail.id) {
+      if (userDetail._id) {
         if (
           firstName === userDetail.firstName &&
           lastName === userDetail.lastName &&
@@ -45,32 +48,45 @@ const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
         )
           return;
         else {
-          const userId = doc(db, "users", userDetail.id);
-          await updateDoc(userId, data);
+          const payload = {
+            url: "users",
+            id: userDetail._id,
+            body: data,
+          };
+          const resp = await updateUser(payload).unwrap();
+          if (resp?.code === updateUserCode) {
+            dispatch(
+              openAlert({
+                type: "success",
+                message: resp.message,
+              })
+            );
+            onClose();
+          }
+        }
+      } else {
+        const payload = {
+          url: "users",
+          body: data,
+        };
+        const resp = await addUser(payload).unwrap();
+        if (resp?.code === addUserCode) {
           dispatch(
             openAlert({
               type: "success",
-              message: "User updated successfully!",
+              message: resp.message,
             })
           );
           onClose();
         }
-      } else {
-        await setDoc(doc(db, "users", Date.now().toString(36)), {
-          firstName,
-          lastName,
-          email,
-          designation,
-        });
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "User added successfully!",
-          })
-        );
-        onClose();
       }
-    } catch (error) {
+    } catch (error: any) {
+      dispatch(
+        openAlert({
+          type: "error",
+          message: error?.data?.error,
+        })
+      );
       console.log("error", error);
     }
   };
@@ -86,7 +102,7 @@ const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
         <Box sx={modalStyles}>
           <CloseIcon onClick={onClose} sx={modalCrossStyle} />
           <Typography variant="h5" padding="10px 20px">
-            {userDetail.id ? "Update" : "Add"} User
+            {userDetail._id ? "Update" : "Add"} User
           </Typography>
           <Divider />
           <form onSubmit={handleSubmit(handleSubmitForm)}>
@@ -153,9 +169,9 @@ const AddUserModal = ({ open, onClose, userDetail }: AddUserModalInterface) => {
                   sx={{ textTransform: "capitalize" }}
                   variant="contained"
                   text={
-                    userDetail.id && isSubmitting
+                    userDetail._id && isSubmitting
                       ? "Updating..."
-                      : userDetail.id
+                      : userDetail._id
                       ? "Update"
                       : isSubmitting
                       ? "Submitting..."

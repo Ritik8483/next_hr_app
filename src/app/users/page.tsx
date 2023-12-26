@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
@@ -14,16 +14,6 @@ import Buttons from "@/components/resuseables/Buttons";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import AlertBox from "@/components/resuseables/AlertBox";
 import AddUserModal from "./AddUserModal";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  or,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "@/firebaseConfig";
 import NoDataFound from "@/components/resuseables/NoDataFound";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
@@ -32,6 +22,8 @@ import useDebounce from "@/components/hooks/useDebounce";
 import SearchField from "@/components/resuseables/SearchField";
 import { StyledTableCell, StyledTableRow } from "@/styles/styles";
 import { useRouter } from "next/navigation";
+import { useDeleteUserMutation, useGetAllUsersQuery } from "@/redux/api/api";
+import { deleteUserCode, limit } from "@/constants/constant";
 
 const tableHeadings = [
   "S.No.",
@@ -52,14 +44,18 @@ const Users = () => {
   const [openAddUserModal, setOpenAddUserModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState<string>("");
-  const [totalCount, setTotalCount] = useState<number>();
-  const [isEmpty, setIsEmpty] = useState<boolean>(false);
-  const [offset, setOffset] = useState<number>(10);
-  const [prevOffset, setPrevOffset] = useState<number>(0);
-  const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
-  const [usersList, setUsersList] = useState([]);
   const [userDetail, setUserDetail] = useState({});
   const debouncedValue = useDebounce(searchText, 500);
+
+  const payload = {
+    url: "users",
+    page: currentPage,
+    limit: limit,
+    search: debouncedValue || "",
+  };
+
+  const { data, isLoading, error } = useGetAllUsersQuery(payload);
+  const [deleteUser] = useDeleteUserMutation();
 
   const handleClose = (value: string) => {
     setOpenAlertBox({
@@ -73,57 +69,6 @@ const Users = () => {
     setOpenAddUserModal(true);
   };
 
-  const getData = async () => {
-    try {
-      if (debouncedValue.length > 0) {
-        const usersRef = collection(db, "users");
-        const querySearch = query(
-          usersRef,
-          or(
-            where("firstName", "==", debouncedValue),
-            where("email", "==", debouncedValue)
-          )
-        );
-        const querySnapshot = await getDocs(querySearch);
-        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-        setTotalNoOfItems(querySnapshot?.docs?.length);
-        const singleUserArr: any = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        setTotalCount(total);
-        setUsersList(singleUserArr);
-      } else {
-        const querySnapshot: any = await getDocs(collection(db, "users"));
-        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-        setTotalNoOfItems(querySnapshot?.docs?.length);
-        setTotalCount(total);
-        const allUsersData = querySnapshot?.docs
-          ?.reverse()
-          ?.slice(prevOffset, offset)
-          ?.map((doc: any) => {
-            return {
-              id: doc.id,
-              ...doc.data(),
-            };
-          });
-
-        setUsersList(allUsersData);
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  useEffect(() => {
-    getData();
-    setTimeout(() => {
-      setIsEmpty(true);
-    }, 3000);
-  }, [openAddUserModal, openAlertBox, currentPage, debouncedValue]);
-
   const handleEdit = (item: any) => {
     setOpenAddUserModal(true);
     setUserDetail(item);
@@ -131,25 +76,20 @@ const Users = () => {
 
   const handleDeleteUser = async () => {
     try {
-      await deleteDoc(doc(db, "users", openAlertBox.data.id));
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "User deleted successfully!",
-        })
-      );
-      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-        setOffset(offset === 10 ? 10 : offset - 10);
-        setPrevOffset(
-          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+      const payload = {
+        url: "users",
+        id: openAlertBox.data._id,
+      };
+      const resp = await deleteUser(payload).unwrap();
+      if (resp?.code === deleteUserCode) {
+        dispatch(
+          openAlert({
+            type: "success",
+            message: resp.message,
+          })
         );
-        setCurrentPage(
-          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-            ? currentPage - 1
-            : currentPage
-        );
+        setOpenAlertBox(false);
       }
-      setOpenAlertBox(false);
     } catch (error) {
       console.log("error", error);
     }
@@ -180,15 +120,15 @@ const Users = () => {
         />
       </Box>
 
-      {!usersList?.length && isEmpty ? (
+      {!data?.data?.length || data === undefined ? (
         <NoDataFound text="No data Found" />
-      ) : !usersList?.length ? (
+      ) : isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
-      ) : usersList?.length ? (
+      ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>
             <Table sx={{ minWidth: 700 }} aria-label="customized table">
@@ -211,13 +151,15 @@ const Users = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {usersList.map((item: any, index: number) => (
+                {data?.data?.map((item: any, index: number) => (
                   <StyledTableRow
-                    onClick={() => handleRowClick(item.id)}
-                    key={item.id}
+                    onClick={() => handleRowClick(item._id)}
+                    key={item._id}
                   >
                     <StyledTableCell component="th" scope="row">
-                      {currentPage === 1 ? index + 1 : prevOffset + index + 1}
+                      {currentPage === 1
+                        ? index + 1
+                        : limit * currentPage + 1 - limit + index}
                     </StyledTableCell>
                     <StyledTableCell align="center">
                       {item.firstName}
@@ -254,18 +196,15 @@ const Users = () => {
               </TableBody>
             </Table>
             <PaginationTable
-              prevOffset={prevOffset}
-              offset={offset}
-              onClick={() => setSearchText("")}
-              totalNoOfItems={totalNoOfItems}
-              totalCount={totalCount}
+              totalCount={Math.ceil(data?.total / limit)}
               currentPage={currentPage}
+              totalNumber={data?.total}
               setCurrentPage={setCurrentPage}
-              setOffset={setOffset}
-              setPrevOffset={setPrevOffset}
             />
           </TableContainer>
         </>
+      ) : error ? (
+        <NoDataFound text="Something went wrong" />
       ) : null}
 
       {openAlertBox && (

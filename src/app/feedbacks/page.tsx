@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -18,35 +18,23 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useRouter } from "next/navigation";
 import AlertBox from "@/components/resuseables/AlertBox";
 import AddFeedbacksModal from "./AddFeedbacksModal";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  or,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "@/firebaseConfig";
 import useDebounce from "@/components/hooks/useDebounce";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import { StyledTableCell, StyledTableRow } from "@/styles/styles";
 import NoDataFound from "@/components/resuseables/NoDataFound";
 import PaginationTable from "@/components/resuseables/Pagination";
 import { openAlert } from "@/redux/slices/snackBarSlice";
-import { tableHeadings } from "@/constants/constant";
+import { deleteFeedbackParameterCode, limit, tableHeadings } from "@/constants/constant";
+import {
+  useDeleteFeedbackParameterMutation,
+  useGetAllFeedbackParametersQuery,
+} from "@/redux/api/api";
 
 const Feedbacks = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [searchText, setSearchText] = useState<string>("");
   const [openFeedbackModal, setOpenFeedbackModal] = useState<boolean>(false);
-  const [feedbacksList, setFeedbacksList] = useState([]);
-  const [totalCount, setTotalCount] = useState<number>();
-  const [offset, setOffset] = useState<number>(10);
-  const [isEmpty, setIsEmpty] = useState<boolean>(false);
-  const [prevOffset, setPrevOffset] = useState<number>(0);
-  const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [feedbackDetail, setFeedbackDetail] = useState({});
   const [openAlertBox, setOpenAlertBox] = useState<any>({
@@ -55,6 +43,17 @@ const Feedbacks = () => {
   });
 
   const debouncedValue = useDebounce(searchText, 500);
+
+  const payload = {
+    url: "feedback-parameters",
+    page: currentPage,
+    limit: limit,
+    search: debouncedValue || "",
+  };
+  const { data, isLoading, error } = useGetAllFeedbackParametersQuery(payload);
+  const [deleteFeedbackParameter] = useDeleteFeedbackParameterMutation();
+
+  console.log("data", data);
 
   const handleAddUser = () => {
     setFeedbackDetail({});
@@ -68,52 +67,6 @@ const Feedbacks = () => {
     });
   };
 
-  const getFeedbacksData = async () => {
-    try {
-      if (debouncedValue.length > 0) {
-        const usersRef = collection(db, "feedbacks");
-        const querySearch = query(
-          usersRef,
-          or(where("feedbackName", "==", debouncedValue))
-        );
-        const querySnapshot = await getDocs(querySearch);
-        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-        setTotalNoOfItems(querySnapshot?.docs?.length);
-        const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        setTotalCount(total);
-        setFeedbacksList(feedbacksArr);
-      } else {
-        const querySnapshot: any = await getDocs(collection(db, "feedbacks"));
-        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-        setTotalNoOfItems(querySnapshot?.docs?.length);
-        setTotalCount(total);
-        const allFeedbacksData = querySnapshot?.docs
-          ?.reverse()
-          ?.slice(prevOffset, offset)
-          ?.map((doc: any) => {
-            return {
-              id: doc.id,
-              ...doc.data(),
-            };
-          });
-        setFeedbacksList(allFeedbacksData);
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-  useEffect(() => {
-    getFeedbacksData();
-    setTimeout(() => {
-      setIsEmpty(true);
-    }, 3000);
-  }, [openFeedbackModal, openAlertBox, currentPage, debouncedValue]);
-
   const handleRowClick = (id: string) => {
     localStorage.setItem("generateId", JSON.stringify(`feedbacks/${id}`));
     router.push(`feedbacks/${id}`);
@@ -126,25 +79,20 @@ const Feedbacks = () => {
 
   const handleDeleteFeedback = async () => {
     try {
-      await deleteDoc(doc(db, "feedbacks", openAlertBox.data.id));
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Feedback deleted successfully!",
-        })
-      );
-      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-        setOffset(offset === 10 ? 10 : offset - 10);
-        setPrevOffset(
-          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+      const payload = {
+        url: "feedback-parameters",
+        id: openAlertBox.data._id,
+      };
+      const resp = await deleteFeedbackParameter(payload).unwrap();
+      if (resp?.code === deleteFeedbackParameterCode) {
+        dispatch(
+          openAlert({
+            type: "success",
+            message: resp.message,
+          })
         );
-        setCurrentPage(
-          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-            ? currentPage - 1
-            : currentPage
-        );
+        setOpenAlertBox(false);
       }
-      setOpenAlertBox(false);
     } catch (error) {
       console.log("error", error);
     }
@@ -170,15 +118,15 @@ const Feedbacks = () => {
         />
       </Box>
 
-      {!feedbacksList?.length && isEmpty ? (
+      {!data?.data?.length || data === undefined ? (
         <NoDataFound text="No data Found" />
-      ) : !feedbacksList?.length ? (
+      ) : isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
-      ) : feedbacksList?.length ? (
+      ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>
             <Table sx={{ minWidth: 700 }} aria-label="customized table">
@@ -201,13 +149,15 @@ const Feedbacks = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {feedbacksList.map((item: any, index: number) => (
+                {data?.data?.map((item: any, index: number) => (
                   <StyledTableRow
-                    onClick={() => handleRowClick(item.id)}
-                    key={item.id}
+                    onClick={() => handleRowClick(item._id)}
+                    key={item._id}
                   >
                     <StyledTableCell component="th" scope="row">
-                      {currentPage === 1 ? index + 1 : prevOffset + index + 1}
+                      {currentPage === 1
+                        ? index + 1
+                        : limit * currentPage + 1 - limit + index}
                     </StyledTableCell>
                     <StyledTableCell align="center">
                       {item.feedback_parameter_type}
@@ -240,21 +190,16 @@ const Feedbacks = () => {
               </TableBody>
             </Table>
             <PaginationTable
-              prevOffset={prevOffset}
-              offset={offset}
-              onClick={() => setSearchText("")}
-              totalNoOfItems={totalNoOfItems}
-              totalCount={totalCount}
+              totalCount={Math.ceil(data?.total / limit)}
               currentPage={currentPage}
+              totalNumber={data?.total}
               setCurrentPage={setCurrentPage}
-              setOffset={setOffset}
-              setPrevOffset={setPrevOffset}
             />
           </TableContainer>
         </>
-      ) : (
-        <NoDataFound text="No data Found" />
-      )}
+      ) : error ? (
+        <NoDataFound text="Something went wrong" />
+      ) : null}
 
       {openFeedbackModal && (
         <AddFeedbacksModal

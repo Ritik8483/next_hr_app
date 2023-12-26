@@ -1,23 +1,12 @@
 import React from "react";
 import { Box, Divider, Typography } from "@mui/material";
 import Pagination from "@mui/material/Pagination";
+import { limit } from "@/constants/constant";
 
 const PaginationTable = (props: any) => {
-  const {
-    prevOffset,
-    offset,
-    totalNoOfItems,
-    totalCount,
-    currentPage,
-    setCurrentPage,
-    onClick,
-    setOffset,
-    setPrevOffset,
-  } = props;
+  const { totalCount, currentPage, setCurrentPage, totalNumber } = props;
   const handlePagination = (value: number) => {
     setCurrentPage(value);
-    setOffset(value * 10);
-    setPrevOffset((value - 1) * 10);
   };
 
   return (
@@ -32,15 +21,18 @@ const PaginationTable = (props: any) => {
         paddingLeft="15px"
       >
         <Typography fontSize="14px" color="var(--iconGrey)">
-          Showing {prevOffset + 1} -{" "}
-          {totalCount === currentPage ? totalNoOfItems : offset} of{" "}
-          {totalNoOfItems} {totalNoOfItems === 1 ? "entry" : "enteries"}
+          Showing {currentPage * limit + 1 - limit} -{" "}
+          {totalNumber === currentPage
+            ? totalNumber
+            : limit * currentPage < totalNumber
+            ? limit * currentPage
+            : totalNumber}{" "}
+          of {totalNumber} {totalNumber === 1 ? "entry" : "enteries"}
         </Typography>
         <Pagination
           onChange={(e: React.ChangeEvent<unknown>, value: number) =>
             handlePagination(value)
           }
-          onClick={onClick}
           count={totalCount}
           defaultPage={1}
           page={currentPage}
