@@ -23,19 +23,14 @@ import { StyledTableCell, StyledTableRow } from "@/styles/styles";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useRouter } from "next/navigation";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  or,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "@/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import AlertBox from "@/components/resuseables/AlertBox";
+import { deleteFeedbackFormCode, limit } from "@/constants/constant";
+import {
+  useDeleteFeedbackFormMutation,
+  useGetAllGenerateFeedbackFormQuery,
+} from "@/redux/api/api";
 
 const tableHeadings = [
   "S.No.",
@@ -53,14 +48,8 @@ const GenerateFeedback = () => {
   const [publishFormId, setPublishFormId] = useState<number>();
   const [feedbackFormModal, setFeedbackFormModal] = useState<boolean>(false);
   const [feedbackFormDetail, setFeedbackFormDetail] = useState({});
-  const [totalCount, setTotalCount] = useState<number>();
-  const [offset, setOffset] = useState<number>(10);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isEmpty, setIsEmpty] = useState<boolean>(false);
-  const [prevOffset, setPrevOffset] = useState<number>(0);
-  const [totalNoOfItems, setTotalNoOfItems] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [feedbackFormList, setFeedbackFormList] = useState<any>([]);
   const [openAlertBox, setOpenAlertBox] = useState<any>({
     data: {},
     state: false,
@@ -68,117 +57,32 @@ const GenerateFeedback = () => {
 
   const debouncedValue = useDebounce(searchText, 500);
 
+  const payload = {
+    url: "feedback-form",
+    page: currentPage,
+    limit: limit,
+    search: debouncedValue || "",
+  };
+
+  const { data, isLoading, error } =
+    useGetAllGenerateFeedbackFormQuery(payload);
+  const [deleteFeedbackForm] = useDeleteFeedbackFormMutation();
+
   const handleAddUser = () => {
     setFeedbackFormDetail({});
     setFeedbackFormModal(true);
   };
 
   const handleRowClick = (item: any) => {
-    localStorage.setItem("generateId", JSON.stringify(`/generate/${item.id}`));
-    router.push(`/generate/${item.id}`);
+    localStorage.setItem("generateId", JSON.stringify(`/generate/${item._id}`));
+    router.push(`/generate/${item._id}`);
   };
-
-  const getAllUsers = async (allFeedbacksData: any) => {
-    try {
-      const usersQuery: any = await getDocs(collection(db, "users"));
-      const querySnapshot: any = await getDocs(collection(db, "roles"));
-      const allRolesData = querySnapshot?.docs
-        ?.reverse()
-        ?.slice(prevOffset, offset)
-        ?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-      const allUsersData = usersQuery?.docs?.map((doc: any) => {
-        return {
-          id: doc.id,
-          ...doc.data(),
-        };
-      });
-
-      const allreviwersId = allFeedbacksData?.map((it: any) => it.reviewer);
-      const usersArr = allreviwersId?.map((it: any) => {
-        const ff = allUsersData.filter((item: any) => it?.includes(item.id));
-        return ff;
-      });
-      const reviewerDataMap = usersArr
-        .flat()
-        .reduce((map: any, reviewer: any) => {
-          map[reviewer.id] = reviewer;
-          return map;
-        }, {});
-
-      const newArray = allFeedbacksData.map((entry: any) => {
-        return {
-          ...entry,
-          reviewer: entry.reviewer.map(
-            (reviewerId: any) => reviewerDataMap[reviewerId]
-          ),
-        };
-      });
-      return newArray;
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  const getFeedbacksData = async () => {
-    try {
-      if (debouncedValue.length > 0) {
-        const usersRef = collection(db, "feedback_form");
-        const querySearch = query(
-          usersRef,
-          or(where("feedback_type", "==", debouncedValue))
-        );
-        const querySnapshot = await getDocs(querySearch);
-        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-        setTotalNoOfItems(querySnapshot?.docs?.length);
-        const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        setTotalCount(total);
-        const data = await getAllUsers(feedbacksArr);
-        setFeedbackFormList(data);
-      } else {
-        const querySnapshot: any = await getDocs(
-          collection(db, "feedback_form")
-        );
-
-        const total: number = Math.ceil(querySnapshot?.docs?.length / 10);
-        setTotalNoOfItems(querySnapshot?.docs?.length);
-        setTotalCount(total);
-        const allFeedbacksData = querySnapshot?.docs
-          ?.reverse()
-          ?.slice(prevOffset, offset)
-          ?.map((doc: any) => {
-            return {
-              id: doc.id,
-              ...doc.data(),
-            };
-          });
-        const data = await getAllUsers(allFeedbacksData);
-        setFeedbackFormList(data);
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-  useEffect(() => {
-    getFeedbacksData();
-    setTimeout(() => {
-      setIsEmpty(true);
-    }, 3000);
-  }, [feedbackFormModal, openAlertBox, currentPage, debouncedValue]);
 
   const handleSubmit = (e: any, index: number) => {
     e.preventDefault();
     setPublishFormId(index);
     setIsSubmitting(true);
+    console.log(formRef?.current[index]);
     emailjs
       .sendForm(
         `${process.env.NEXT_PUBLIC_EMAIL_SERVICE}`,
@@ -222,38 +126,34 @@ const GenerateFeedback = () => {
 
   const handleDeleteFeedbackForm = async () => {
     try {
-      await deleteDoc(doc(db, "feedback_form", openAlertBox.data.id));
-      dispatch(
-        openAlert({
-          type: "success",
-          message: "Feedback form deleted successfully!",
-        })
-      );
-      if (totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset) {
-        setOffset(offset === 10 ? 10 : offset - 10);
-        setPrevOffset(
-          prevOffset === 10 || prevOffset === 0 ? 0 : prevOffset - 10
+      const payload = {
+        url: "feedback-form",
+        id: openAlertBox.data._id,
+      };
+
+      const resp = await deleteFeedbackForm(payload).unwrap();
+      if (resp?.code === deleteFeedbackFormCode) {
+        dispatch(
+          openAlert({
+            type: "success",
+            message: resp.message,
+          })
         );
-        setCurrentPage(
-          totalNoOfItems - 1 === prevOffset || totalNoOfItems - 1 === offset
-            ? currentPage - 1
-            : currentPage
-        );
+        setOpenAlertBox(false);
       }
-      setOpenAlertBox(false);
     } catch (error) {
       console.log("error", error);
     }
   };
 
   useEffect(() => {
-    formRef.current = formRef.current.slice(0, feedbackFormList.length);
-    feedbackFormList.forEach((_: any, index: number) => {
+    formRef.current = formRef.current.slice(0, data?.data?.length);
+    data?.data?.forEach((_: any, index: number) => {
       if (!formRef.current[index]) {
         formRef.current[index] = document.createElement("form");
       }
     });
-  }, [feedbackFormList]);
+  }, [data?.data?.length]);
 
   return (
     <>
@@ -263,11 +163,12 @@ const GenerateFeedback = () => {
         alignItems="center"
         marginBottom="24px"
       >
-        <SearchField
+        {/* <SearchField
           setSearchText={setSearchText}
           searchText={searchText}
           placeholder="Search feedback by name"
-        />
+        /> */}
+        <Box></Box>
         <Buttons
           text="Create Form"
           sx={{ textTransform: "capitalize" }}
@@ -275,15 +176,15 @@ const GenerateFeedback = () => {
         />
       </Box>
 
-      {!feedbackFormList?.length && isEmpty ? (
+      {!data?.data?.length && data === undefined ? (
         <NoDataFound text="No data Found" />
-      ) : !feedbackFormList?.length ? (
+      ) : isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
-      ) : feedbackFormList?.length ? (
+      ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>
             <Table aria-label="customized table">
@@ -306,14 +207,16 @@ const GenerateFeedback = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {feedbackFormList.map((item: any, index: number) => {
+                {data?.data?.map((item: any, index: number) => {
                   return (
                     <StyledTableRow
                       onClick={() => handleRowClick(item)}
-                      key={item.id}
+                      key={item._id}
                     >
                       <StyledTableCell component="th" scope="row">
-                        {currentPage === 1 ? index + 1 : prevOffset + index + 1}
+                        {currentPage === 1
+                          ? index + 1
+                          : limit * currentPage + 1 - limit + index}
                       </StyledTableCell>
                       <StyledTableCell align="center">
                         {item.feedback_type}
@@ -339,10 +242,45 @@ const GenerateFeedback = () => {
                             alignItems: "center",
                           }}
                         >
+                          {item?.reviewer?.length > 3
+                            ? item?.reviewer
+                                ?.slice(0, 3)
+                                ?.map((it: any) => (
+                                  <Chip
+                                    label={it.firstName + " " + it.lastName}
+                                  />
+                                ))
+                            : item?.reviewer?.map((it: any) => (
+                                <Chip
+                                  label={it.firstName + " " + it.lastName}
+                                />
+                              ))}
+                          {item?.reviewer?.length > 3 && (
+                            <Chip
+                              sx={{ fontSize: "11px" }}
+                              label={
+                                "+" +
+                                " " +
+                                (item?.reviewer?.length - 3) +
+                                " " +
+                                "more"
+                              }
+                            />
+                          )}
+                        </Box>
+                        {/* <Box
+                          sx={{
+                            display: "flex",
+                            gap: "10px",
+                            justifyContent: "center",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                          }}
+                        >
                           {item?.reviewer?.map((it: any) => (
                             <Chip label={it.firstName + " " + it.lastName} />
                           ))}
-                        </Box>
+                        </Box> */}
                       </StyledTableCell>
                       <StyledTableCell align="right">
                         <Box
@@ -383,7 +321,7 @@ const GenerateFeedback = () => {
                             formRef.current[index] = el;
                           }
                         }}
-                        key={item.id}
+                        key={item._id}
                         // onSubmit={(e: any) => handleSubmit(e, index)}
                       >
                         <input
@@ -393,7 +331,7 @@ const GenerateFeedback = () => {
                         />
                         <input
                           name="message"
-                          defaultValue={`${process.env.NEXT_PUBLIC_LOCAL_SERVER}user-login?id=${item.id}`}
+                          defaultValue={`${process.env.NEXT_PUBLIC_LOCAL_SERVER}user-login?id=${item._id}`}
                           style={{ visibility: "hidden" }}
                         />
 
@@ -412,18 +350,15 @@ const GenerateFeedback = () => {
             </Table>
 
             <PaginationTable
-              prevOffset={prevOffset}
-              offset={offset}
-              onClick={() => setSearchText("")}
-              totalNoOfItems={totalNoOfItems}
-              totalCount={totalCount}
+              totalCount={Math.ceil(data?.total / limit)}
               currentPage={currentPage}
+              totalNumber={data?.total}
               setCurrentPage={setCurrentPage}
-              setOffset={setOffset}
-              setPrevOffset={setPrevOffset}
             />
           </TableContainer>
         </>
+      ) : error ? (
+        <NoDataFound text="Something went wrong" />
       ) : null}
 
       {feedbackFormModal && (

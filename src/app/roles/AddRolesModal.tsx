@@ -17,14 +17,6 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemText from "@mui/material/ListItemText";
 import Select from "@mui/material/Select";
 import Checkbox from "@mui/material/Checkbox";
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { db } from "@/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import {
@@ -78,7 +70,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
 
   const handleSubmitForm = async (data: any) => {
     if (!personName.length) return;
-    const { teamName, teamEmail } = data;
     setValidateUsers(false);
     try {
       if (rolesDetail._id) {
@@ -100,7 +91,7 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
       } else {
         const payload = {
           url: "roles",
-          body: { ...data, userIds: personName.map((it: any) => it._id) },
+          body: { ...data, teamUsers: personName.map((it: any) => it._id) },
         };
 
         console.log("payload", payload);
@@ -120,24 +111,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
       console.log("error", error);
     }
   };
-
-  // const getUsersData = async () => {
-  //   try {
-  //     const querySnapshot: any = await getDocs(collection(db, "users"));
-  //     const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
-  //       return {
-  //         id: doc.id,
-  //         ...doc.data(),
-  //       };
-  //     });
-  //     setUsersList(allUsersData);
-  //   } catch (error) {
-  //     console.log("error", error);
-  //   }
-  // };
-  // useEffect(() => {
-  //   getUsersData();
-  // }, []);
 
   const handleValidateUsers = () => {
     if (personName.length) {
@@ -205,7 +178,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
                 multiple
                 sx={{ width: "100%" }}
                 value={personName}
-                // label="PErson"
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
                   console.log("selected", selected);
@@ -233,7 +205,15 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
                         checked={userIds?.includes(item._id)}
                       />
                       <ListItemText
-                        primary={item.firstName + " " + item.lastName}
+                        primary={
+                          item.firstName +
+                          " " +
+                          item.lastName +
+                          " " +
+                          "(" +
+                          item.designation +
+                          ")"
+                        }
                       />
                     </MenuItem>
                   );

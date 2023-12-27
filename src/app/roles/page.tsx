@@ -46,9 +46,9 @@ const Roles = () => {
 
   const payload = {
     url: "roles",
-    // page: currentPage,
-    // limit: limit,
-    // search: debouncedValue || "",
+    page: currentPage,
+    limit: limit,
+    search: debouncedValue || "",
   };
 
   const { data, isLoading, error } = useGetAllRolesQuery(payload);
@@ -148,54 +148,84 @@ const Roles = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.data?.map((item: any, index: number) => (
-                  <StyledTableRow
-                    onClick={() => handleRowClick(item._id)}
-                    key={item._id}
-                  >
-                    <StyledTableCell component="th" scope="row">
-                      {currentPage === 1
-                        ? index + 1
-                        : limit * currentPage + 1 - limit + index}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.teamName}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.teamEmail}
-                    </StyledTableCell>
-                    <StyledTableCell
-                      sx={{
-                        display: "flex",
-                        gap: "10px",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                      align="center"
+                {data?.data?.map((item: any, index: number) => {
+                  return (
+                    <StyledTableRow
+                      onClick={() => handleRowClick(item._id)}
+                      key={item._id}
                     >
-                      {item?.teamUsers?.map((it: any) => (
-                        <Chip label={it.firstName + " " + it.lastName} />
-                      ))}
-                    </StyledTableCell>
-                    <StyledTableCell
-                      align="right"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                    >
-                      <Box display="flex" gap="15px" justifyContent="flex-end">
-                        <EditIcon
-                          onClick={() => handleEdit(item)}
-                          sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                        />
-                        <DeleteIcon
-                          onClick={() =>
-                            setOpenAlertBox({ data: item, state: true })
-                          }
-                          sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                        />
-                      </Box>
-                    </StyledTableCell>
-                  </StyledTableRow>
-                ))}
+                      <StyledTableCell component="th" scope="row">
+                        {currentPage === 1
+                          ? index + 1
+                          : limit * currentPage + 1 - limit + index}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {item.teamName}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {item.teamEmail}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: "10px",
+                            justifyContent: "center",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                          }}
+                        >
+                          {item?.teamUsers?.length > 3
+                            ? item?.teamUsers
+                                ?.slice(0, 3)
+                                ?.map((it: any) => (
+                                  <Chip
+                                    label={it.firstName + " " + it.lastName}
+                                  />
+                                ))
+                            : item?.teamUsers?.map((it: any) => (
+                                <Chip
+                                  label={it.firstName + " " + it.lastName}
+                                />
+                              ))}
+                          {item?.teamUsers?.length > 3 && (
+                            <Chip
+                              sx={{ fontSize: "11px" }}
+                              label={
+                                "+" +
+                                " " +
+                                (item?.teamUsers?.length - 3) +
+                                " " +
+                                "more"
+                              }
+                            />
+                          )}
+                        </Box>
+                      </StyledTableCell>
+                      <StyledTableCell
+                        align="right"
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      >
+                        <Box
+                          display="flex"
+                          gap="15px"
+                          justifyContent="flex-end"
+                        >
+                          <EditIcon
+                            onClick={() => handleEdit(item)}
+                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
+                          />
+                          <DeleteIcon
+                            onClick={() =>
+                              setOpenAlertBox({ data: item, state: true })
+                            }
+                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
+                          />
+                        </Box>
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             <PaginationTable

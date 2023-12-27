@@ -4,7 +4,7 @@ import NoDataFound from "@/components/resuseables/NoDataFound";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import { db } from "@/firebaseConfig";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
-import { useParams,  useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -16,6 +16,7 @@ import ETMtable from "./ETMtable";
 import html2PDF from "jspdf-html2canvas";
 import { DownloadTableExcel } from "react-export-table-to-excel";
 import Buttons from "@/components/resuseables/Buttons";
+import { useGetSingleFeedbackFormDetailQuery } from "@/redux/api/api";
 
 const GenerateFeedbackDetail = () => {
   const router: any = useRouter();
@@ -30,84 +31,13 @@ const GenerateFeedbackDetail = () => {
   const [openAllCollapses, setOpenAllCollapses] = useState(false);
   const [openId, setOpenId] = useState<string>("");
 
-  const getFeedbacksData = async () => {
-    try {
-      const docRef = doc(db, "feedback_form", generate_feedback_detail);
-      const docSnap: any = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setFeedbackResponseList(docSnap?.data());
-        if (
-          docSnap?.data()?.feedback_type === MTE &&
-          Array.isArray(docSnap?.data()?.review)
-        ) {
-          const filterUserArr = docSnap
-            ?.data()
-            ?.review?.map((it: any) => it.id);
-          const usersArr = filterUserArr?.filter(
-            (it: string) => it !== undefined
-          );
-
-          const filteredTeamsArr = docSnap
-            ?.data()
-            ?.review?.filter((it: any) =>
-              Object.keys(it).some((key) => key?.includes("team"))
-            );
-          const arrOfUsers = docSnap
-            ?.data()
-            ?.review?.filter((it: any) =>
-              Object.keys(it).some((key) => key?.includes("firstName"))
-            );
-          const teamUsersArr = filteredTeamsArr.map((it: any) => {
-            return it.teamUsers.filter(
-              (items: any) => !usersArr?.includes(items.id)
-            );
-          });
-          const filteredUsersFromTeams = arrOfUsers.concat(...teamUsersArr);
-          setPeoplesToReviewArr(filteredUsersFromTeams);
-
-          const usersMTEArr = docSnap
-            ?.data()
-            ?.responses?.map((it: any) => it.userInfo.id);
-
-          const pendingReviewArr = filteredUsersFromTeams?.filter(
-            (it: any) => !usersMTEArr?.includes(it.id)
-          );
-          setPendingMTEReviews(pendingReviewArr);
-        }
-
-        const querySnapshot: any = await getDocs(collection(db, "users"));
-        const allUsersData = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-
-        const filteredNames = allUsersData?.filter((item: any) =>
-          docSnap.data()?.reviewer?.includes(item.id)
-        );
-        const doneUsers = filteredNames.filter(
-          (item: any) => !docSnap?.data()?.responses?.includes(item.id)
-        );
-        const pendingUsers = filteredNames.filter((item: any) =>
-          docSnap?.data()?.responses?.includes(item.id)
-        );
-
-        if (docSnap?.data()?.responses?.length) {
-          setDoneReviewers(doneUsers);
-
-          setPendingReviewers(pendingUsers);
-        }
-      } else {
-        console.log("No such document!");
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
+  const payload = {
+    url: "feedback-form",
+    id: generate_feedback_detail,
   };
-  useEffect(() => {
-    getFeedbacksData();
-  }, []);
+  const { data, isLoading } = useGetSingleFeedbackFormDetailQuery(payload);
+
+  console.log("data", data);
 
   const handleOpenTable = (id: string) => {
     setOpenId(id);
@@ -169,7 +99,7 @@ const GenerateFeedbackDetail = () => {
         {breadcrumbs}
       </Breadcrumbs>
 
-      <DownloadTableExcel
+      {/* <DownloadTableExcel
         filename="users table"
         sheet="users"
         currentTableRef={tableRef.current}
@@ -181,13 +111,13 @@ const GenerateFeedbackDetail = () => {
         text="download PDF"
         onMouseOver={() => setOpenAllCollapses(true)}
         onClick={downloadPrintPDF}
-      />
+      /> */}
       <Box ref={tableRef}>
         <Box marginTop="20px" display="flex" flexDirection="column" gap="20px">
-          {feedbackResponseList?.feedback_type === MTE ? (
+          {data?.data?.feedback_type === MTE ? (
             <Typography>
               Total{" "}
-              {Array.isArray(feedbackResponseList?.review)
+              {Array.isArray(data?.data?.review)
                 ? "persons to review"
                 : "Reviewers"}{" "}
               : {peoplesToReviewArr?.length}
@@ -195,19 +125,17 @@ const GenerateFeedbackDetail = () => {
           ) : (
             <Typography>
               Total{" "}
-              {feedbackResponseList?.reviewer?.length === 1
-                ? "Reviewer"
-                : "Reviewers"}{" "}
-              : {feedbackResponseList?.reviewer?.length}
+              {data?.data?.reviewer?.length === 1 ? "Reviewer" : "Reviewers"} :{" "}
+              {data?.data?.reviewer?.length}
             </Typography>
           )}
-          {feedbackResponseList?.feedback_type === MTE &&
-          feedbackResponseList?.reviewer?.length > 1 &&
-          feedbackResponseList?.review?.length > 1 ? (
+          {data?.data?.feedback_type === MTE &&
+          data?.data?.reviewer?.length > 1 &&
+          data?.data?.review?.length > 1 ? (
             <Box display="flex" gap="5px" alignItems="center">
               Done Review of :{" "}
-              {feedbackResponseList?.responses?.length
-                ? feedbackResponseList?.responses?.map((item: any) => (
+              {data?.data?.responses?.length
+                ? data?.data?.responses?.map((item: any) => (
                     <Chip
                       avatar={
                         <Avatar>
@@ -224,11 +152,11 @@ const GenerateFeedbackDetail = () => {
                   ))
                 : 0}
             </Box>
-          ) : feedbackResponseList?.feedback_type === MTE ? (
+          ) : data?.data?.feedback_type === MTE ? (
             <Box display="flex" gap="5px" alignItems="center">
               Done Review of :{" "}
-              {feedbackResponseList?.responses?.length
-                ? feedbackResponseList?.responses?.map((item: any) => (
+              {data?.data?.responses?.length
+                ? data?.data?.responses?.map((item: any) => (
                     <Chip
                       key={item?.userInfo?.id}
                       label={
@@ -264,10 +192,10 @@ const GenerateFeedbackDetail = () => {
             </Box>
           )}
 
-          {feedbackResponseList?.feedback_type === MTE &&
-          feedbackResponseList?.reviewer?.length > 1 &&
-          feedbackResponseList?.review?.length >
-            1 ? null : feedbackResponseList?.feedback_type === MTE ? (
+          {data?.data?.feedback_type === MTE &&
+          data?.data?.reviewer?.length > 1 &&
+          data?.data?.review?.length > 1 ? null : data?.data?.feedback_type ===
+            MTE ? (
             <Box display="flex" gap="5px" alignItems="center">
               Pending reviews of :{" "}
               {pendingMTEReviews?.length
@@ -304,30 +232,30 @@ const GenerateFeedbackDetail = () => {
           )}
         </Box>
 
-        {Object.keys(feedbackResponseList).length === 0 ? (
+        {isLoading ? (
           <SkeletonTable
             variant="rounded"
             width="100%"
             sx={{ marginTop: "20px" }}
             height="calc(100vh - 180px)"
           />
-        ) : feedbackResponseList.hasOwnProperty("responses") &&
-          feedbackResponseList?.feedback_type === MTE ? (
+        ) : data?.data?.hasOwnProperty("responses") &&
+          data?.data?.feedback_type === MTE ? (
           <>
             <MTEtable
-              feedbackResponseList={feedbackResponseList}
+              feedbackResponseList={data?.data}
               handleOpenTable={handleOpenTable}
               open={open}
               openId={openId}
               openAllCollapses={openAllCollapses}
             />
           </>
-        ) : feedbackResponseList.hasOwnProperty("responses") &&
-          feedbackResponseList?.responses?.length &&
-          feedbackResponseList?.feedback_type === ETM ? (
+        ) : data?.data?.hasOwnProperty("responses") &&
+          data?.data?.responses?.length &&
+          data?.data?.feedback_type === ETM ? (
           <>
             <ETMtable
-              feedbackResponseList={feedbackResponseList}
+              feedbackResponseList={data?.data}
               handleOpenTable={handleOpenTable}
               open={open}
               openId={openId}

@@ -178,7 +178,11 @@ const Users = () => {
                       align="right"
                       onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
-                      <Box display="flex" gap="15px" justifyContent="flex-end">
+                      <Box
+                        display="flex"
+                        gap="15px"
+                        justifyContent="flex-end"
+                      >
                         <EditIcon
                           onClick={() => handleEdit(item)}
                           sx={{ cursor: "pointer", color: "var(--iconGrey)" }}

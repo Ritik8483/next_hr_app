@@ -3,11 +3,15 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8080/" }),
-  tagTypes: ["FeedbackParameter", "Users", "Roles"],
+  tagTypes: ["FeedbackParameter", "Users", "Roles", "GenerateForm"],
   endpoints: (builder) => ({
     getAllFeedbackParameters: builder.query({
       query: (data) => ({
-        url: `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`,
+        url: data.page
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
+          : data.search
+          ? `${data.url}?search=${data.search}`
+          : data.url,
       }),
       providesTags: ["FeedbackParameter"],
     }),
@@ -42,7 +46,7 @@ export const api = createApi({
       query: (data) => ({
         url: data.page
           ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
-          : data.url,
+          : `${data.url}?search=${data.search}`,
       }),
       providesTags: ["Users"],
     }),
@@ -73,9 +77,11 @@ export const api = createApi({
       invalidatesTags: ["Users"],
     }),
 
-    getAllRoles: builder.query({
+    getAllRoles: builder.query<any, any>({
       query: (data) => ({
-        url: `${data.url}`,
+        url: data.page
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
+          : `${data.url}?search=${data.search}`,
       }),
       providesTags: ["Roles"],
     }),
@@ -105,6 +111,48 @@ export const api = createApi({
       }),
       invalidatesTags: ["Roles"],
     }),
+
+    getAllGenerateFeedbackForm: builder.query({
+      query: (data) => ({
+        url: data.page
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
+          : `${data.url}?search=${data.search}`,
+      }),
+      providesTags: ["GenerateForm"],
+    }),
+
+    getSingleFeedbackFormDetail: builder.query({
+      query: (data) => ({
+        url: `${data.url}/${data.id}`,
+      }),
+      providesTags: ["GenerateForm"],
+    }),
+
+    addGenerateFeedbackForm: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+      invalidatesTags: ["GenerateForm"],
+    }),
+
+    updateFeedbackForm: builder.mutation({
+      query: (data) => ({
+        url: `${data.url}/${data.id}`,
+        method: "PATCH",
+        body: data.body,
+      }),
+      invalidatesTags: ["GenerateForm"],
+    }),
+
+    deleteFeedbackForm: builder.mutation({
+      query: (data) => ({
+        url: `${data.url}/${data.id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["GenerateForm"],
+    }),
   }),
 });
 
@@ -121,6 +169,11 @@ export const {
   useAddRoleMutation,
   useUpdateRoleMutation,
   useDeleteRoleMutation,
+  useGetAllGenerateFeedbackFormQuery,
+  useGetSingleFeedbackFormDetailQuery,
+  useAddGenerateFeedbackFormMutation,
+  useUpdateFeedbackFormMutation,
+  useDeleteFeedbackFormMutation,
 } = api;
 
 //DOCS

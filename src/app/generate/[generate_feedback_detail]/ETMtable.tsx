@@ -38,6 +38,8 @@ const ETMtable = (props: any) => {
     openAllCollapses,
   } = props;
 
+  console.log("feedbackResponseList", feedbackResponseList);
+
   return (
     <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
       <Table aria-label="collapsible table">

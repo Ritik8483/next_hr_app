@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Modal from "@mui/material/Modal";
 import {
   modalCrossStyle,
@@ -21,24 +21,24 @@ import {
 import Buttons from "@/components/resuseables/Buttons";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  or,
-  query,
-  setDoc,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { db } from "@/firebaseConfig";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import SearchField from "@/components/resuseables/SearchField";
 import useDebounce from "@/components/hooks/useDebounce";
 import NoDataFound from "@/components/resuseables/NoDataFound";
-import { ETM, MTE } from "@/constants/constant";
+import {
+  ETM,
+  MTE,
+  addFeedbackFormCode,
+  updateFeedbackFormCode,
+} from "@/constants/constant";
+import {
+  useAddFeedbackParameterMutation,
+  useGetAllFeedbackParametersQuery,
+  useGetAllRolesQuery,
+  useGetAllUsersQuery,
+  useUpdateFeedbackFormMutation,
+} from "@/redux/api/api";
 
 interface GenerateFeedbackInterface {
   feedbackFormModal: boolean;
@@ -66,23 +66,50 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const [feedbackFormType, setFeedbackFormType] = useState(
     feedbackFormDetail?.feedback_type || ""
   );
-  const [usersList, setUsersList] = useState([]);
-  const [reviewerType, setReviewerType] = useState<any>([]);
+  const [reviewerType, setReviewerType] = useState<any>(
+    (feedbackFormDetail?.reviewer?.length && feedbackFormDetail?.reviewer) || []
+  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [feedbackParametersArr, setFeedbackParametersArr] = useState([]);
+  const [feedbackParametersArr, setFeedbackParametersArr] = useState(
+    (feedbackFormDetail?.feedback_parameters?.length &&
+      feedbackFormDetail?.feedback_parameters) ||
+      []
+  );
   const [validate, setValidate] = useState(false);
-  const [rolesList, setRolesList] = useState([]);
-  const [feedbacksList, setFeedbacksList] = useState([]);
   const [searchReviewText, setSearchReviewText] = useState<string>("");
   const [searchReviewerText, setSearchReviewerText] = useState<string>("");
   const [reviewType, setReviewType] = useState<any>(
-    feedbackFormDetail?.review || ""
+    (feedbackFormDetail?.review && feedbackFormDetail?.review[0]) || ""
   );
   const [multipleReviewType, setMultipleReviewType] = useState<any>([]);
   const [searchFeedbacks, setSearchFeedbacks] = useState<string>("");
   const debouncedReview = useDebounce(searchReviewText, 500);
   const debouncedReviewer = useDebounce(searchReviewerText, 500);
   const debouncedFeedbacks = useDebounce(searchFeedbacks, 500);
+
+  const [addGenerateFeedbackForm] = useAddFeedbackParameterMutation();
+  const [updateFeedbackForm] = useUpdateFeedbackFormMutation();
+
+  console.log("feedbackFormDetail", feedbackFormDetail);
+
+  const usersPayload = {
+    url: "users",
+    search: debouncedReview || "",
+  };
+
+  const rolesPayload = {
+    url: "roles",
+    search: debouncedReviewer || "",
+  };
+
+  const feedbacksPayload = {
+    url: "feedback-parameters",
+    search: debouncedFeedbacks || "",
+  };
+  const { data: usersData } = useGetAllUsersQuery(usersPayload);
+  const { data: feedbackParametersData } =
+    useGetAllFeedbackParametersQuery(feedbacksPayload);
+  const { data: rolesData } = useGetAllRolesQuery(rolesPayload);
 
   const handleFeedbackTypeChange = (event: SelectChangeEvent) => {
     setFeedbackFormType(event.target.value);
@@ -97,7 +124,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const handleFeedbackChange = (item: any) => {
     const feedbackParametersArray: any = [...feedbackParametersArr];
     const indexOfItem = feedbackParametersArray.findIndex(
-      (it: any) => it.id === item.id
+      (it: any) => it._id === item._id
     );
 
     if (indexOfItem !== -1) {
@@ -110,7 +137,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
   const handleReviewerChange = (item: any) => {
     const personNames: any = [...reviewerType];
-    const indexOfItem = personNames.findIndex((it: any) => it.id === item.id);
+    const indexOfItem = personNames.findIndex((it: any) => it._id === item._id);
 
     if (indexOfItem !== -1) {
       personNames.splice(indexOfItem, 1);
@@ -123,7 +150,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const handleMultiReviewChange = (item: any) => {
     const personNames: any = [...multipleReviewType];
 
-    const indexOfItem = personNames.findIndex((it: any) => it.id === item.id);
+    const indexOfItem = personNames.findIndex((it: any) => it._id === item._id);
     if (indexOfItem !== -1) {
       personNames.splice(indexOfItem, 1);
     } else {
@@ -131,154 +158,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     }
     setMultipleReviewType(personNames);
   };
-
-  const getUsersData = async () => {
-    let reviewerArrOfUsers: any = [];
-    let multipleReviewArr: any = [];
-    const filteredReviews: any =
-      feedbackFormDetail?.feedback_type === MTE &&
-      feedbackFormDetail?.review?.map((it: any) => it.email || it.teamEmail);
-
-    try {
-      if (debouncedReview.length > 0 || debouncedReviewer.length > 0) {
-        const usersRef = collection(db, "users");
-        const querySearch = query(
-          usersRef,
-          or(where("firstName", "==", debouncedReviewer || debouncedReview))
-        );
-
-        const querySnapshot = await getDocs(querySearch);
-
-        const usersArr: any = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        setUsersList(usersArr);
-      } else {
-        const querySnapshot: any = await getDocs(collection(db, "users"));
-        const allUsersData = querySnapshot?.docs?.reverse()?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        const resp = allUsersData?.filter((item: any) =>
-          feedbackFormDetail?.reviewerEmails?.split(",")?.includes(item.email)
-        );
-
-        if (feedbackFormDetail?.id && !reviewerType.length) {
-          reviewerArrOfUsers = resp;
-          setReviewerType([...resp]);
-        }
-        if (
-          feedbackFormDetail?.id &&
-          feedbackFormDetail?.feedback_type === MTE &&
-          !multipleReviewType.length
-        ) {
-          const response = allUsersData?.filter((item: any) =>
-            filteredReviews?.includes(item.email)
-          );
-
-          multipleReviewArr = response;
-          setMultipleReviewType([...response]);
-        }
-        setUsersList(allUsersData);
-      }
-
-      if (
-        (feedbackFormType === MTE && debouncedReview.length > 0) ||
-        debouncedReviewer.length > 0
-      ) {
-        const usersRef = collection(db, "roles");
-        const querySearch = query(
-          usersRef,
-          or(where("teamName", "==", debouncedReview || debouncedReviewer))
-        );
-        const querySnapshot = await getDocs(querySearch);
-        const allRolesData: any = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        setRolesList(allRolesData);
-      } else {
-        const queryRoles: any = await getDocs(collection(db, "roles"));
-        const allRolesData = queryRoles?.docs?.reverse()?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-
-        const response = allRolesData?.filter((item: any) =>
-          feedbackFormDetail?.reviewerEmails
-            ?.split(",")
-            ?.includes(item.teamEmail)
-        );
-
-        if (feedbackFormDetail?.id && !reviewerType.length) {
-          setReviewerType([...reviewerArrOfUsers, ...response]);
-          reviewerArrOfUsers = [];
-        }
-
-        if (
-          feedbackFormDetail?.id &&
-          feedbackFormDetail?.feedback_type === MTE &&
-          !multipleReviewType.length
-        ) {
-          const responseReviews = allRolesData?.filter((item: any) =>
-            filteredReviews?.includes(item.teamEmail)
-          );
-
-          setMultipleReviewType([...multipleReviewArr, ...responseReviews]);
-          multipleReviewArr = [];
-        }
-        setRolesList(allRolesData);
-      }
-
-      if (debouncedFeedbacks.length > 0) {
-        const usersRef = collection(db, "feedbacks");
-        const querySearch = query(
-          usersRef,
-          or(where("feedbackName", "==", debouncedFeedbacks))
-        );
-        const querySnapshot = await getDocs(querySearch);
-        const feedbacksArr: any = querySnapshot?.docs?.map((doc: any) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
-        setFeedbacksList(feedbacksArr);
-      } else {
-        const queryFeedbacks: any = await getDocs(collection(db, "feedbacks"));
-        const allFeedbacksData = queryFeedbacks?.docs
-          ?.reverse()
-          ?.map((doc: any) => {
-            return {
-              id: doc.id,
-              ...doc.data(),
-            };
-          });
-        const resp = allFeedbacksData?.filter((item: any) =>
-          feedbackFormDetail?.feedback_parameters?.includes(item.id)
-        );
-        if (feedbackFormDetail?.id && !feedbackParametersArr.length) {
-          setFeedbackParametersArr(resp);
-        }
-        setFeedbacksList(allFeedbacksData);
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  useEffect(() => {
-    getUsersData();
-  }, [debouncedReview, debouncedReviewer, debouncedFeedbacks]);
 
   const handleSubmitForm = async (e: any) => {
     e.preventDefault();
@@ -292,7 +171,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       return;
     setIsSubmitting(true);
 
-    const feedParameters = feedbackParametersArr?.map((it: any) => it.id);
+    //extracting feedback parameters id
+    const feedParameters = feedbackParametersArr?.map((it: any) => it._id);
 
     //Extracting Emails of the Reviewer
     const reviewerUsersEmails = reviewerType?.map((it: any) => it.email);
@@ -303,7 +183,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     //Extracting user ids of Reviewer
     const reviewerTeamIds = reviewerType?.map((item: any) => {
       const arrTeams: any =
-        item.teamName && item?.teamUsers?.map((it: any) => it.id);
+        item.teamName && item?.teamUsers?.map((it: any) => it._id);
       return arrTeams;
     });
     const teamsIdsArr = reviewerTeamIds.filter(
@@ -312,7 +192,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     const teamsArr = teamsIdsArr.flat();
 
     const reviewerUsersIds = reviewerType?.map(
-      (item: any) => item.firstName && item?.id
+      (item: any) => item.firstName && item?._id
     );
     const usersArr = reviewerUsersIds.filter((it: string) => it !== undefined);
 
@@ -320,47 +200,57 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
     const feedbackFormData = {
       feedback_type: feedbackFormType,
-      review: feedbackFormType === ETM ? reviewType : multipleReviewType,
+      review: feedbackFormType === ETM ? [reviewType] : multipleReviewType,
       reviewer: allUsersArr,
       feedback_parameters: feedParameters,
       reviewerEmails: filteredEmails.toString(),
     };
 
     try {
-      if (feedbackFormDetail.id) {
-        const userId = doc(db, "feedback_form", feedbackFormDetail.id);
-        await updateDoc(userId, feedbackFormData);
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "Feedback form updated successfully!",
-          })
-        );
-        onClose();
-      } else {
-        await setDoc(
-          doc(db, "feedback_form", Date.now().toString(36)),
-          feedbackFormData
-        );
+      if (feedbackFormDetail._id) {
+        const payload = {
+          url: "feedback-form",
+          id: feedbackFormDetail._id,
+          body: feedbackFormData,
+        };
 
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "Feedback form created successfully!",
-          })
-        );
-        onClose();
+        const resp = await updateFeedbackForm(payload).unwrap();
+        if (resp?.code === updateFeedbackFormCode) {
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          onClose();
+        }
+      } else {
+        const payload = {
+          url: "feedback-form",
+          body: feedbackFormData,
+        };
+
+        const resp = await addGenerateFeedbackForm(payload).unwrap();
+        if (resp?.code === addFeedbackFormCode) {
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          onClose();
+        }
       }
     } catch (error) {
       console.log("error", error);
     }
   };
 
-  const teamIds = reviewerType?.map((it: any) => it.id);
+  const teamIds = reviewerType?.map((it: any) => it._id);
   const feedbackParametersArray = feedbackParametersArr?.map(
-    (it: any) => it.id
+    (it: any) => it._id
   );
-  const reviewTeamIds = multipleReviewType?.map((it: any) => it.id);
+  const reviewTeamIds = multipleReviewType?.map((it: any) => it._id);
 
   const handleSubmitClick = () => {
     if (
@@ -390,7 +280,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       <Box sx={modalStyles}>
         <CloseIcon onClick={onClose} sx={modalCrossStyle} />
         <Typography variant="h5" padding="10px 20px">
-          {feedbackFormDetail.id ? "Update" : "Create"} Feedback Form
+          {feedbackFormDetail._id ? "Update" : "Create"} Feedback Form
         </Typography>
         <Divider />
 
@@ -496,11 +386,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                   </MenuItem>
                 </ListSubheader>
                 {feedbackFormType === ETM &&
-                  (usersList?.length ? (
-                    usersList?.map((it: any) => (
+                  (usersData?.data?.length ? (
+                    usersData?.data?.map((it: any) => (
                       <MenuItem
                         onClick={() => handleReviewChange(it)}
-                        key={it.id}
+                        key={it._id}
                         value={it}
                       >
                         {it.firstName +
@@ -519,17 +409,17 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 {feedbackFormType === MTE && (
                   <>
                     <ListSubheader>Team Names</ListSubheader>
-                    {rolesList?.length ? (
-                      rolesList?.map((it: any) => {
+                    {rolesData?.data?.length ? (
+                      rolesData?.data?.map((it: any) => {
                         return (
                           <MenuItem
-                            key={it.id}
+                            key={it._id}
                             value={it}
                             onClick={() => handleMultiReviewChange(it)}
                           >
                             <Checkbox
-                              defaultChecked={reviewTeamIds?.includes(it.id)}
-                              checked={reviewTeamIds?.includes(it.id)}
+                              defaultChecked={reviewTeamIds?.includes(it._id)}
+                              checked={reviewTeamIds?.includes(it._id)}
                             />
                             <ListItemText primary={it.teamName} />
                           </MenuItem>
@@ -539,20 +429,28 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                       <NoDataFound height="auto" text="No data Found" />
                     )}
                     <ListSubheader>Employees</ListSubheader>
-                    {usersList.length ? (
-                      usersList?.map((it: any) => {
+                    {usersData?.data?.length ? (
+                      usersData?.data?.map((it: any) => {
                         return (
                           <MenuItem
-                            key={it.id}
+                            key={it._id}
                             value={it}
                             onClick={() => handleMultiReviewChange(it)}
                           >
                             <Checkbox
-                              defaultChecked={reviewTeamIds?.includes(it.id)}
-                              checked={reviewTeamIds?.includes(it.id)}
+                              defaultChecked={reviewTeamIds?.includes(it._id)}
+                              checked={reviewTeamIds?.includes(it._id)}
                             />
                             <ListItemText
-                              primary={it.firstName + " " + it.lastName}
+                              primary={
+                                it.firstName +
+                                " " +
+                                it.lastName +
+                                " " +
+                                "(" +
+                                it.designation +
+                                ")"
+                              }
                             />
                           </MenuItem>
                         );
@@ -630,17 +528,17 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                   </MenuItem>
                 </ListSubheader>
                 <ListSubheader>Team Names</ListSubheader>
-                {rolesList?.length ? (
-                  rolesList?.map((it: any) => {
+                {rolesData?.data?.length ? (
+                  rolesData?.data?.map((it: any) => {
                     return (
                       <MenuItem
-                        key={it.id}
+                        key={it._id}
                         value={it}
                         onClick={() => handleReviewerChange(it)}
                       >
                         <Checkbox
-                          defaultChecked={teamIds?.includes(it.id)}
-                          checked={teamIds?.includes(it.id)}
+                          defaultChecked={teamIds?.includes(it._id)}
+                          checked={teamIds?.includes(it._id)}
                         />
                         <ListItemText primary={it.teamName} />
                       </MenuItem>
@@ -650,20 +548,28 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                   <NoDataFound height="auto" text="No data Found" />
                 )}
                 <ListSubheader>Employees</ListSubheader>
-                {usersList.length ? (
-                  usersList?.map((it: any) => {
+                {usersData?.data.length ? (
+                  usersData?.data?.map((it: any) => {
                     return (
                       <MenuItem
-                        key={it.id}
+                        key={it._id}
                         value={it}
                         onClick={() => handleReviewerChange(it)}
                       >
                         <Checkbox
-                          defaultChecked={teamIds?.includes(it.id)}
-                          checked={teamIds?.includes(it.id)}
+                          defaultChecked={teamIds?.includes(it._id)}
+                          checked={teamIds?.includes(it._id)}
                         />
                         <ListItemText
-                          primary={it.firstName + " " + it.lastName}
+                          primary={
+                            it.firstName +
+                            " " +
+                            it.lastName +
+                            " " +
+                            "(" +
+                            it.designation +
+                            ")"
+                          }
                         />
                       </MenuItem>
                     );
@@ -721,19 +627,19 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     />
                   </MenuItem>
                 </ListSubheader>
-                {feedbacksList?.length ? (
-                  feedbacksList?.map((it: any) => {
+                {feedbackParametersData?.data?.length ? (
+                  feedbackParametersData?.data?.map((it: any) => {
                     return (
                       <MenuItem
-                        key={it.id}
+                        key={it._id}
                         value={it}
                         onClick={() => handleFeedbackChange(it)}
                       >
                         <Checkbox
                           defaultChecked={feedbackParametersArray?.includes(
-                            it.id
+                            it._id
                           )}
-                          checked={feedbackParametersArray?.includes(it.id)}
+                          checked={feedbackParametersArray?.includes(it._id)}
                         />
                         <ListItemText
                           primary={
@@ -782,9 +688,9 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
               variant="contained"
               onClick={handleSubmitClick}
               text={
-                feedbackFormDetail.id && isSubmitting
+                feedbackFormDetail._id && isSubmitting
                   ? "Updating..."
-                  : feedbackFormDetail.id
+                  : feedbackFormDetail._id
                   ? "Update"
                   : isSubmitting
                   ? "Creating..."
@@ -800,6 +706,3 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 };
 
 export default GenerateFeedbackModal;
-
-// ETM same Flow_Block
-// MTE review teams/employee and employer shashank
