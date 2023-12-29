@@ -82,7 +82,6 @@ const GenerateFeedback = () => {
     e.preventDefault();
     setPublishFormId(index);
     setIsSubmitting(true);
-    console.log(formRef?.current[index]);
     emailjs
       .sendForm(
         `${process.env.NEXT_PUBLIC_EMAIL_SERVICE}`,
@@ -222,15 +221,22 @@ const GenerateFeedback = () => {
                         {item.feedback_type}
                       </StyledTableCell>
                       <StyledTableCell align="center">
-                        {Array.isArray(item.review)
+                        {item?.review?.length > 3
                           ? item.review
+                              ?.slice(0, 3)
                               ?.map(
                                 (it: any) =>
                                   it.teamName ||
                                   it.firstName + " " + it.lastName
                               )
-                              .toString()
-                          : item.review.firstName + " " + item.review.lastName}
+                              .toString() + "..."
+                          : item.review
+                              ?.map(
+                                (it: any) =>
+                                  it.teamName ||
+                                  it.firstName + " " + it.lastName
+                              )
+                              .toString()}
                       </StyledTableCell>
                       <StyledTableCell align="center">
                         <Box
@@ -376,15 +382,18 @@ const GenerateFeedback = () => {
           confirmText="Yes Delete"
           mainHeaderText="Are you sure you want to delete feedback form for "
           userName={
-            Array.isArray(openAlertBox.data?.review)
+            openAlertBox.data?.review?.length > 3
               ? openAlertBox.data?.review
+                  ?.slice(0, 2)
+                  ?.map(
+                    (it: any) => it.teamName || it.firstName + " " + it.lastName
+                  )
+                  .toString() + "..."
+              : openAlertBox.data?.review
                   ?.map(
                     (it: any) => it.teamName || it.firstName + " " + it.lastName
                   )
                   .toString()
-              : openAlertBox.data?.review?.firstName +
-                " " +
-                openAlertBox.data?.review?.lastName
           }
           onClose={handleClose}
           handleClick={handleDeleteFeedbackForm}

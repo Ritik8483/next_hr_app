@@ -81,7 +81,9 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const [reviewType, setReviewType] = useState<any>(
     (feedbackFormDetail?.review && feedbackFormDetail?.review[0]) || ""
   );
-  const [multipleReviewType, setMultipleReviewType] = useState<any>([]);
+  const [multipleReviewType, setMultipleReviewType] = useState<any>(
+    (feedbackFormDetail?.review?.length && feedbackFormDetail?.review) || []
+  );
   const [searchFeedbacks, setSearchFeedbacks] = useState<string>("");
   const debouncedReview = useDebounce(searchReviewText, 500);
   const debouncedReviewer = useDebounce(searchReviewerText, 500);
@@ -89,8 +91,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
   const [addGenerateFeedbackForm] = useAddFeedbackParameterMutation();
   const [updateFeedbackForm] = useUpdateFeedbackFormMutation();
-
-  console.log("feedbackFormDetail", feedbackFormDetail);
 
   const usersPayload = {
     url: "users",
@@ -177,8 +177,30 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     //Extracting Emails of the Reviewer
     const reviewerUsersEmails = reviewerType?.map((it: any) => it.email);
     const reviewerTeamEmails = reviewerType?.map((it: any) => it.teamEmail);
-    const allEmails = [...reviewerTeamEmails, ...reviewerUsersEmails];
-    const filteredEmails = allEmails.filter((it: any) => it !== undefined);
+    const userEmails = rolesData?.data?.filter((it: any) =>
+      reviewerTeamEmails.includes(it.teamEmail)
+    );
+    const extractTeamUsers = userEmails?.map((it: any) => it?.teamUsers);
+    const extractTeamEmails = extractTeamUsers
+      ?.flat()
+      ?.map((it: any) => it?.email);
+    const allEmails = [...reviewerUsersEmails, ...extractTeamEmails];
+    const uniqueEmails = [...new Set(allEmails)];
+    const filteredEmails = uniqueEmails.filter((it: any) => it !== undefined);
+
+    //Extracting Reviews for MTE
+    const filterUserIds =
+      feedbackFormType === MTE &&
+      multipleReviewType?.map((it: any) => {
+        if (Object.keys(it).some((key) => key.includes("team"))) {
+          return it.teamUsers.map((item: any) => item._id);
+        } else if (Object.keys(it).some((key) => key.includes("firstName"))) {
+          return it._id;
+        }
+      });
+    const flattenedIdsArray = feedbackFormType === MTE && [
+      ...new Set(filterUserIds.flat()),
+    ];
 
     //Extracting user ids of Reviewer
     const reviewerTeamIds = reviewerType?.map((item: any) => {
@@ -200,7 +222,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
     const feedbackFormData = {
       feedback_type: feedbackFormType,
-      review: feedbackFormType === ETM ? [reviewType] : multipleReviewType,
+      review: feedbackFormType === ETM ? [reviewType] : flattenedIdsArray,
       reviewer: allUsersArr,
       feedback_parameters: feedParameters,
       reviewerEmails: filteredEmails.toString(),
@@ -229,7 +251,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
           url: "feedback-form",
           body: feedbackFormData,
         };
-
         const resp = await addGenerateFeedbackForm(payload).unwrap();
         if (resp?.code === addFeedbackFormCode) {
           dispatch(

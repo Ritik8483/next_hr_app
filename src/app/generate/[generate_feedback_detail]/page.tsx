@@ -2,8 +2,6 @@
 
 import NoDataFound from "@/components/resuseables/NoDataFound";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
-import { db } from "@/firebaseConfig";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
@@ -36,8 +34,6 @@ const GenerateFeedbackDetail = () => {
     id: generate_feedback_detail,
   };
   const { data, isLoading } = useGetSingleFeedbackFormDetailQuery(payload);
-
-  console.log("data", data);
 
   const handleOpenTable = (id: string) => {
     setOpenId(id);

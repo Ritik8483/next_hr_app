@@ -1,10 +1,19 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseQuery } from "@/app/global";
+import { createApi } from "@reduxjs/toolkit/query/react";
 
 export const api = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8080/" }),
-  tagTypes: ["FeedbackParameter", "Users", "Roles", "GenerateForm"],
+  baseQuery: baseQuery,
+  tagTypes: ["Generate", "Parameters", "Users", "Roles"],
   endpoints: (builder) => ({
+    loginAdminUser: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+    }),
+
     getAllFeedbackParameters: builder.query({
       query: (data) => ({
         url: data.page
@@ -13,7 +22,7 @@ export const api = createApi({
           ? `${data.url}?search=${data.search}`
           : data.url,
       }),
-      providesTags: ["FeedbackParameter"],
+      providesTags: ["Parameters"],
     }),
 
     addFeedbackParameter: builder.mutation({
@@ -22,7 +31,7 @@ export const api = createApi({
         method: "POST",
         body: data.body,
       }),
-      invalidatesTags: ["FeedbackParameter"],
+      invalidatesTags: ["Parameters"],
     }),
 
     updateFeedbackParameter: builder.mutation({
@@ -31,7 +40,7 @@ export const api = createApi({
         method: "PATCH",
         body: data.body,
       }),
-      invalidatesTags: ["FeedbackParameter"],
+      invalidatesTags: ["Parameters"],
     }),
 
     deleteFeedbackParameter: builder.mutation({
@@ -39,7 +48,7 @@ export const api = createApi({
         url: `${data.url}/${data.id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["FeedbackParameter"],
+      invalidatesTags: ["Parameters"],
     }),
 
     getAllUsers: builder.query({
@@ -118,14 +127,14 @@ export const api = createApi({
           ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
           : `${data.url}?search=${data.search}`,
       }),
-      providesTags: ["GenerateForm"],
+      providesTags: ["Generate"],
     }),
 
     getSingleFeedbackFormDetail: builder.query({
       query: (data) => ({
         url: `${data.url}/${data.id}`,
       }),
-      providesTags: ["GenerateForm"],
+      providesTags: ["Generate"],
     }),
 
     addGenerateFeedbackForm: builder.mutation({
@@ -134,7 +143,7 @@ export const api = createApi({
         method: "POST",
         body: data.body,
       }),
-      invalidatesTags: ["GenerateForm"],
+      invalidatesTags: ["Generate"],
     }),
 
     updateFeedbackForm: builder.mutation({
@@ -143,7 +152,7 @@ export const api = createApi({
         method: "PATCH",
         body: data.body,
       }),
-      invalidatesTags: ["GenerateForm"],
+      invalidatesTags: ["Generate"],
     }),
 
     deleteFeedbackForm: builder.mutation({
@@ -151,12 +160,13 @@ export const api = createApi({
         url: `${data.url}/${data.id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["GenerateForm"],
+      invalidatesTags: ["Generate"],
     }),
   }),
 });
 
 export const {
+  useLoginAdminUserMutation,
   useGetAllFeedbackParametersQuery,
   useAddFeedbackParameterMutation,
   useUpdateFeedbackParameterMutation,

@@ -16,6 +16,8 @@ import Buttons from "@/components/resuseables/Buttons";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { formContainer } from "@/styles/styles";
 import { IFormInput } from "@/interface/Interface";
+import { useLoginAdminUserMutation } from "@/redux/api/api";
+import { storeLoginToken } from "@/redux/slices/authSlice";
 
 const Login = () => {
   const {
@@ -32,29 +34,54 @@ const Login = () => {
   const snackbar = useSelector((state: any) => state.snackbarSlice);
   const dispatch: AppDispatch = useDispatch();
 
+  const [loginAdminUser] = useLoginAdminUserMutation();
+
   const handleSubmitForm = async (data: IFormInput) => {
     if (data?.email === "ritik.chauhan@quokkalabs.com") {
       try {
-        // const reqObj = { auth, email: data.email, password: data.password };
-        // const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
-        const resp: any = await signInWithEmailAndPassword(
-          auth,
-          data.email,
-          data.password
-        );
-
-        if (resp?.user?.accessToken) {
+        const payload = {
+          url: "auth/login",
+          body: data,
+        };
+        const resp = await loginAdminUser(payload).unwrap();
+        console.log("resp", resp);
+        if (resp?.data?.token) {
+          dispatch(storeLoginToken(resp?.data?.token));
           localStorage.setItem("sidebarText", JSON.stringify("Dashboard"));
-          localStorage.setItem("userFirebaseToken", JSON.stringify(resp?.user));
+          localStorage.setItem(
+            "userFirebaseToken",
+            JSON.stringify({ ...data, token: resp?.data?.token })
+          );
           dispatch(
             openAlert({
               type: "success",
-              message: "User logged in successfully!",
+              message: resp.message,
             })
           );
           reset();
           router.push("/dashboard");
         }
+
+        // const reqObj = { auth, email: data.email, password: data.password };
+        // const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
+        // const resp: any = await signInWithEmailAndPassword(
+        //   auth,
+        //   data.email,
+        //   data.password
+        // );
+
+        // if (resp?.user?.accessToken) {
+        //   localStorage.setItem("sidebarText", JSON.stringify("Dashboard"));
+        //   localStorage.setItem("userFirebaseToken", JSON.stringify(resp?.user));
+        //   dispatch(
+        //     openAlert({
+        //       type: "success",
+        //       message: "User logged in successfully!",
+        //     })
+        //   );
+        //   reset();
+        //   router.push("/dashboard");
+        // }
       } catch (error) {
         dispatch(
           openAlert({
@@ -148,20 +175,3 @@ const Login = () => {
 };
 
 export default Login;
-
-// FOR CALLING API WITH THUNK
-//   const { entities, loading, error } = useSelector(
-//     (state: any) => state.authSlice
-//   );
-//   useEffect(() => {
-//     const fetchOneUser = async () => {
-//       try {
-//         const user = await dispatch(fetchUserById(1)).unwrap();
-//         console.log("user", user);
-//       } catch (err) {
-//         console.log("err", err);
-//       }
-//     };
-
-//     fetchOneUser();
-//   }, []);
