@@ -16,12 +16,17 @@ import {
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import Slider from "@mui/material/Slider";
 import { useDispatch, useSelector } from "react-redux";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { storeUsersLoginToken } from "@/redux/slices/authSlice";
-import { ETM, MTE } from "@/constants/constant";
+import { ETM, MTE, updateFeedbackFormCode } from "@/constants/constant";
+import {
+  useGetSingleFeedbackFormDetailQuery,
+  useUpdateFeedbackFormMutation,
+} from "@/redux/api/api";
+import { openAlert } from "@/redux/slices/snackBarSlice";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -47,7 +52,7 @@ const FillFeedbackForm = () => {
   const [feedbackUser, setFeedbackUser] = useState<any>("");
   const [formQueDetails, setFormQueDetails] = useState<any>({});
   const [formData, setFormData] = useState<
-    Array<{ id: string; score?: number; description: string }>
+    Array<{ _id: string; score?: number; description: string }>
   >([]);
   const feedbackId = searchParams.get("id");
 
@@ -55,116 +60,160 @@ const FillFeedbackForm = () => {
     (state: any) => state.authSlice.userLoginDetails
   );
 
-  const getAllFeedbackParameters = async (item: string) => {
-    const docRef = doc(db, "feedbacks", item);
-    const docSnap: any = await getDoc(docRef);
+  const payload = {
+    url: "feedback-form",
+    id: feedbackId,
+  };
+  const { data, isLoading, isError, refetch } =
+    useGetSingleFeedbackFormDetailQuery(payload, {
+      refetchOnMountOrArgChange: true,
+    });
+  const [updateFeedbackForm] = useUpdateFeedbackFormMutation();
 
-    if (docSnap.exists()) {
-      return {
-        id: docSnap.id,
-        ...docSnap?.data(),
-      };
+  console.log("data", data);
+  console.log("formData", formData);
+
+  // const getAllFeedbackParameters = async (item: string) => {
+  //   const docRef = doc(db, "feedbacks", item);
+  //   const docSnap: any = await getDoc(docRef);
+
+  //   if (docSnap.exists()) {
+  //     return {
+  //       id: docSnap.id,
+  //       ...docSnap?.data(),
+  //     };
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   onAuthStateChanged(auth, (user) => {
+  //     if (user) {
+  //       const uid = user.uid;
+  //     } else {
+  //       router.push(`/user-login?id=${feedbackId}`);
+  //     }
+  //   });
+  // }, []);
+
+  // const getFeedbacksData = async () => {
+  //   try {
+  //     const docRef = doc(db, "feedback_form", feedbackId);
+  //     const docSnap = await getDoc(docRef);
+  //     if (docSnap.exists()) {
+  //       setFormQueDetails(docSnap?.data());
+  //       if (Array.isArray(docSnap?.data()?.review)) {
+  //         const filterUserArr = docSnap
+  //           ?.data()
+  //           ?.review?.map((it: any) => it.id);
+  //         const usersArr = filterUserArr?.filter(
+  //           (it: string) => it !== undefined
+  //         );
+  //         const arrOfUsers = docSnap
+  //           ?.data()
+  //           ?.review?.filter((it: any) =>
+  //             Object.keys(it).some((key) => key.includes("firstName"))
+  //           );
+
+  //         const dd = docSnap
+  //           ?.data()
+  //           ?.review?.filter((it: any) =>
+  //             Object.keys(it).some((key) => key.includes("team"))
+  //           );
+
+  //         const teamUsersArr = dd.map((it: any) => {
+  //           return it.teamUsers.filter(
+  //             (items: any) => !usersArr.includes(items.id)
+  //           );
+  //         });
+  //         const filteredUsersFromTeams = arrOfUsers.concat(...teamUsersArr);
+  //         setPeoplesToReviewArr(filteredUsersFromTeams);
+  //       }
+
+  //       const resp = docSnap?.data()?.feedback_parameters?.map((it: string) => {
+  //         return getAllFeedbackParameters(it);
+  //       });
+
+  //       Promise.all(resp).then((val: any) => {
+  //         const obj = val?.map((item: any) => {
+  //           return {
+  //             id: item.id,
+  //             score: "",
+  //             description: "",
+  //             type: item.feedback_parameter_type,
+  //             feedbackName: item.feedbackName,
+  //           };
+  //         });
+  //         setFormData(obj);
+  //         setFeedbackParametersArr(val);
+  //       });
+  //     } else {
+  //       console.log("No such document!");
+  //     }
+  //   } catch (error) {
+  //     console.log("error", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   getFeedbacksData();
+  // }, [state]);
+
+  // useEffect(() => {
+  //   if (
+  //     formQueDetails?.feedback_type === MTE &&
+  //     Object.keys(formQueDetails?.review[0]).includes("firstName") &&
+  //     formQueDetails?.review?.length === 1
+  //   )
+  //     return;
+  //   const onlyResponseObj = formQueDetails?.responses?.filter(
+  //     (it: any) => feedbackReviewerEmail?.email === it.email
+  //   );
+  //   if (
+  //     formQueDetails?.feedback_type === MTE &&
+  //     // formQueDetails?.responses?.length === peoplesToReviewArr?.length
+  //     onlyResponseObj?.length === peoplesToReviewArr?.length
+  //   ) {
+  //     dispatch(storeUsersLoginToken(null));
+  //     signOut(auth)
+  //       .then(() => {
+  //         setPeoplesToReviewArr([]);
+  //         router.push(`/user-login?id=${feedbackId}`);
+  //       })
+  //       .catch((error: any) => {
+  //         console.log("error", error);
+  //       });
+  //   }
+  // }, [peoplesToReviewArr]);
+
+  const initialFeedbackFrom = () => {
+    if (data?.data?._id) {
+      const obj: any = data?.data?.feedback_parameters?.map((item: any) => {
+        return {
+          _id: item._id,
+          score: "",
+          description: "",
+          type: item.feedback_parameter_type,
+          feedbackName: item.feedbackName,
+        };
+      });
+      setFormData(obj);
     }
   };
-
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const uid = user.uid;
-      } else {
-        router.push(`/user-login?id=${feedbackId}`);
-      }
-    });
+    console.log("called");
+    initialFeedbackFrom();
   }, []);
 
-  const getFeedbacksData = async () => {
-    try {
-      const docRef = doc(db, "feedback_form", feedbackId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setFormQueDetails(docSnap?.data());
-        if (Array.isArray(docSnap?.data()?.review)) {
-          const filterUserArr = docSnap
-            ?.data()
-            ?.review?.map((it: any) => it.id);
-          const usersArr = filterUserArr?.filter(
-            (it: string) => it !== undefined
-          );
-          const arrOfUsers = docSnap
-            ?.data()
-            ?.review?.filter((it: any) =>
-              Object.keys(it).some((key) => key.includes("firstName"))
-            );
-
-          const dd = docSnap
-            ?.data()
-            ?.review?.filter((it: any) =>
-              Object.keys(it).some((key) => key.includes("team"))
-            );
-
-          const teamUsersArr = dd.map((it: any) => {
-            return it.teamUsers.filter(
-              (items: any) => !usersArr.includes(items.id)
-            );
-          });
-          const filteredUsersFromTeams = arrOfUsers.concat(...teamUsersArr);
-          setPeoplesToReviewArr(filteredUsersFromTeams);
-        }
-
-        const resp = docSnap?.data()?.feedback_parameters?.map((it: string) => {
-          return getAllFeedbackParameters(it);
-        });
-
-        Promise.all(resp).then((val: any) => {
-          const obj = val?.map((item: any) => {
-            return {
-              id: item.id,
-              score: "",
-              description: "",
-              type: item.feedback_parameter_type,
-              feedbackName: item.feedbackName,
-            };
-          });
-          setFormData(obj);
-          setFeedbackParametersArr(val);
-        });
-      } else {
-        console.log("No such document!");
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
+  const allPrevData = {
+    ...data?.data,
+    feedback_parameters: data?.data?.feedback_parameters?.map(
+      (it: any) => it._id
+    ),
+    review: data?.data?.review?.map((it: any) => it._id),
+    reviewer: data?.data?.reviewer?.map((it: any) => it._id),
   };
-  useEffect(() => {
-    getFeedbacksData();
-  }, [state]);
 
-  useEffect(() => {
-    if (
-      formQueDetails?.feedback_type === MTE &&
-      Object.keys(formQueDetails?.review[0]).includes("firstName") &&
-      formQueDetails?.review?.length === 1
-    )
-      return;
-    const onlyResponseObj = formQueDetails?.responses?.filter(
-      (it: any) => feedbackReviewerEmail?.email === it.email
-    );
-    if (
-      formQueDetails?.feedback_type === MTE &&
-      // formQueDetails?.responses?.length === peoplesToReviewArr?.length
-      onlyResponseObj?.length === peoplesToReviewArr?.length
-    ) {
-      dispatch(storeUsersLoginToken(null));
-      signOut(auth)
-        .then(() => {
-          setPeoplesToReviewArr([]);
-          router.push(`/user-login?id=${feedbackId}`);
-        })
-        .catch((error: any) => {
-          console.log("error", error);
-        });
-    }
-  }, [peoplesToReviewArr]);
+  console.log("feedbackReviewerEmail", feedbackReviewerEmail);
+  console.log("feedbackUser", feedbackUser);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -184,9 +233,9 @@ const FillFeedbackForm = () => {
 
     try {
       const payload = {
-        ...formQueDetails,
-        responses: formQueDetails?.responses?.length
-          ? formQueDetails?.responses?.map((it: any) => {
+        ...allPrevData,
+        responses: data?.data?.responses?.length
+          ? data?.data?.responses?.map((it: any) => {
               if (it === feedbackReviewerEmail?.id) {
                 return {
                   ...feedbackReviewerEmail,
@@ -194,7 +243,7 @@ const FillFeedbackForm = () => {
                 };
               } else return it;
             })
-          : formQueDetails?.reviewer?.map((it: any) => {
+          : data?.data?.reviewer?.map((it: any) => {
               if (it === feedbackReviewerEmail?.id) {
                 return {
                   ...feedbackReviewerEmail,
@@ -204,39 +253,43 @@ const FillFeedbackForm = () => {
             }),
       };
 
-      const payloadMTE = Array.isArray(formQueDetails?.review) && {
-        ...formQueDetails,
-        responses: formQueDetails?.responses?.length
-          ? [
-              ...formQueDetails?.responses,
-              {
-                ...feedbackReviewerEmail,
-                userInfo: feedbackUser,
-                form_response: formData,
-              },
-            ]
-          : formQueDetails?.reviewer?.map((it: any) => {
-              if (feedbackUser.id && it === feedbackReviewerEmail?.id) {
+      const payloadMTE = Array.isArray(data?.data?.review) && {
+        ...allPrevData,
+        responses: data?.data?.responses?.length
+      ? data?.data?.responses?.map((it: any) => {
+          if (it._id === feedbackReviewerEmail?._id) {
+            return {
+              ...it,
+              userProgress: [
+                ...it?.userProgress,
+                { ...feedbackUser, form_response: formData },
+              ],
+            };
+          } else {
+            return it;
+          }
+        })
+          : data?.data?.reviewer?.map((it: any) => {
+              if (feedbackUser._id && it._id === feedbackReviewerEmail?._id) {
                 return {
                   ...feedbackReviewerEmail,
-                  userInfo: feedbackUser,
-                  form_response: formData,
+                  userProgress: [{ ...feedbackUser, form_response: formData }],
+                  // form_response: formData,
                 };
               } else if (
-                Object.keys(formQueDetails?.review[0]).includes("firstName") &&
-                formQueDetails?.review?.length === 1
+                Object.keys(data?.data?.review[0]).includes("firstName") &&
+                data?.data?.review?.length === 1
               ) {
                 return {
                   ...feedbackReviewerEmail,
-                  userInfo:
-                    Object.keys(formQueDetails?.review[0]).includes(
-                      "firstName"
-                    ) && formQueDetails?.review?.length === 1
-                      ? formQueDetails?.review[0]
-                      : feedbackUser,
-                  form_response: formData,
+                  userProgress:
+                    Object.keys(data?.data?.review[0]).includes("firstName") &&
+                    data?.data?.review?.length === 1
+                      ? data?.data?.review[0]
+                      : [{ ...feedbackUser, form_response: formData }],
+                  // form_response: formData,
                 };
-              } else if (it === feedbackReviewerEmail?.id) {
+              } else if (it._id === feedbackReviewerEmail?._id) {
                 return {
                   ...feedbackReviewerEmail,
                   form_response: formData,
@@ -244,28 +297,72 @@ const FillFeedbackForm = () => {
               } else return it;
             }),
       };
-      const payloadSingleMte = Array.isArray(formQueDetails?.review) && {
-        ...formQueDetails,
-        responses: formQueDetails?.responses?.length
+
+      // const payloadMTE = Array.isArray(data?.data?.review) && {
+      //   ...allPrevData,
+      //   responses: data?.data?.responses?.length
+      //     ? data?.data?.responses?.map((it: any) => {
+      //         return [
+      //           ...it,
+      //           {
+      //             ...feedbackReviewerEmail,
+      //             userInfo: feedbackUser,
+      //             form_response: formData,
+      //           },
+      //         ];
+      //       })
+      //     :
+      //       data?.data?.reviewer?.map((it: any) => {
+      //         if (feedbackUser._id && it._id === feedbackReviewerEmail?._id) {
+      //           return {
+      //             ...feedbackReviewerEmail,
+      //             userInfo: feedbackUser,
+      //             form_response: formData,
+      //           };
+      //         } else if (
+      //           Object.keys(data?.data?.review[0]).includes("firstName") &&
+      //           data?.data?.review?.length === 1
+      //         ) {
+      //           return {
+      //             ...feedbackReviewerEmail,
+      //             userInfo:
+      //               Object.keys(data?.data?.review[0]).includes("firstName") &&
+      //               data?.data?.review?.length === 1
+      //                 ? data?.data?.review[0]
+      //                 : feedbackUser,
+      //             form_response: formData,
+      //           };
+      //         } else if (it._id === feedbackReviewerEmail?._id) {
+      //           return {
+      //             ...feedbackReviewerEmail,
+      //             form_response: formData,
+      //           };
+      //         } else return it;
+      //       }),
+      // };
+
+      const payloadSingleMte = Array.isArray(data?.data?.review) && {
+        ...allPrevData,
+        responses: data?.data?.responses?.length
           ? [
-              ...formQueDetails?.responses,
+              ...data?.data?.responses,
               {
                 ...feedbackReviewerEmail,
-                userInfo: formQueDetails?.review[0],
+                userInfo: data?.data?.review[0],
                 form_response: formData,
               },
             ]
-          : formQueDetails?.review?.map((it: any) => {
+          : data?.data?.review?.map((it: any) => {
               if (
-                formQueDetails?.review?.length === 1 &&
-                Object.keys(formQueDetails?.review[0]).includes("firstName")
+                data?.data?.review?.length === 1 &&
+                Object.keys(data?.data?.review[0]).includes("firstName")
               ) {
                 return {
                   ...feedbackReviewerEmail,
                   userInfo:
-                    formQueDetails?.review?.length === 1 &&
-                    Object.keys(formQueDetails?.review[0]).includes("firstName")
-                      ? formQueDetails?.review[0]
+                    data?.data?.review?.length === 1 &&
+                    Object.keys(data?.data?.review[0]).includes("firstName")
+                      ? data?.data?.review[0]
                       : feedbackUser,
                   form_response: formData,
                 };
@@ -273,49 +370,75 @@ const FillFeedbackForm = () => {
             }),
       };
 
-      const payloadFilter = payloadMTE?.responses?.filter(
-        (it: any) => typeof it === "object"
-      );
-      const finalPayloadMTE = { ...payloadMTE, responses: payloadFilter };
+      // const payloadFilter = payloadMTE?.responses?.filter(
+      //   (it: any) => typeof it === "object"
+      // );
+      // const finalPayloadMTE = { ...payloadMTE, responses: payloadFilter };
 
-      const userId = doc(db, "feedback_form", feedbackId);
-      await updateDoc(
-        userId,
-        formQueDetails?.feedback_type === MTE &&
-          Object.keys(formQueDetails?.review[0]).includes("firstName") &&
-          formQueDetails?.review?.length === 1
-          ? payloadSingleMte
-          : formQueDetails?.feedback_type === MTE
-          ? finalPayloadMTE
-          : payload
-      );
-      getFeedbacksData();
-      if (
-        formQueDetails?.feedback_type === MTE &&
-        Array.isArray(formQueDetails?.review)
-      ) {
+      // console.log(
+      //   data?.data?.feedback_type === MTE &&
+      //     Object.keys(data?.data?.review[0]).includes("firstName") &&
+      //     data?.data?.review?.length === 1
+      //     ? alert("1")
+      //     : data?.data?.feedback_type === MTE
+      //     ? alert("2")
+      //     : alert("3")
+      // );
+
+      // const userId = doc(db, "feedback_form", feedbackId);
+
+      const responsePayload = {
+        url: "feedback-form",
+        id: feedbackId,
+        body:
+          data?.data?.feedback_type === MTE &&
+          Object.keys(data?.data?.review[0]).includes("firstName") &&
+          data?.data?.review?.length === 1
+            ? payloadSingleMte
+            : data?.data?.feedback_type === MTE
+            ? payloadMTE
+            : // ? finalPayloadMTE
+              payload,
+      };
+
+      console.log("responsePayload", responsePayload);
+
+      const resp = await updateFeedbackForm(responsePayload).unwrap();
+      console.log("resp", resp);
+      if (resp?.code) {
         setFeedbackUser("");
-        setState(!state);
-        setFormData([]);
+        refetch;
+        initialFeedbackFrom();
       }
 
-      if (
-        formQueDetails?.feedback_type === ETM ||
-        (formQueDetails?.feedback_type === MTE &&
-          formQueDetails?.review?.length === 1 &&
-          Object.keys(formQueDetails?.review[0]).includes("firstName"))
-      ) {
-        dispatch(storeUsersLoginToken(null));
-        signOut(auth)
-          .then(() => {
-            setPeoplesToReviewArr([]);
-            router.push(`/user-login?id=${feedbackId}`);
-          })
-          .catch((error: any) => {
-            console.log("error", error);
-          });
-      }
-      alert("Form Submitted Successfully");
+      // getFeedbacksData();
+
+      // if (
+      //   data?.data?.feedback_type === MTE &&
+      //   Array.isArray(data?.data?.review)
+      // ) {
+      //   setFeedbackUser("");
+      //   setState(!state);
+      //   setFormData([]);
+      // }
+
+      // if (
+      //   data?.data?.feedback_type === ETM ||
+      //   (data?.data?.feedback_type === MTE &&
+      //     data?.data?.review?.length === 1 &&
+      //     Object.keys(data?.data?.review[0]).includes("firstName"))
+      // ) {
+      //   dispatch(storeUsersLoginToken(null));
+      //   signOut(auth)
+      //     .then(() => {
+      //       setPeoplesToReviewArr([]);
+      //       router.push(`/user-login?id=${feedbackId}`);
+      //     })
+      //     .catch((error: any) => {
+      //       console.log("error", error);
+      //     });
+      // }
+      // alert("Form Submitted Successfully");
     } catch (error) {
       console.log(error);
     }
@@ -324,13 +447,15 @@ const FillFeedbackForm = () => {
 
   const handleScoreChange = (id: string, score: number) => {
     setFormData((prevData) =>
-      prevData.map((item) => (item.id === id ? { ...item, score } : item))
+      prevData.map((item: any) => (item._id === id ? { ...item, score } : item))
     );
   };
 
   const handleDescChange = (id: string, description: string) => {
     setFormData((prevData) =>
-      prevData.map((item) => (item.id === id ? { ...item, description } : item))
+      prevData.map((item: any) =>
+        item._id === id ? { ...item, description } : item
+      )
     );
   };
 
@@ -342,11 +467,21 @@ const FillFeedbackForm = () => {
     setFeedbackUser(item);
   };
 
-  const feedbacksSubmittedFor =
-    Array.isArray(formQueDetails?.review) &&
-    formQueDetails?.responses?.map(
-      (it: any) => feedbackReviewerEmail?.email === it.email && it?.userInfo?.id
+  const feedbacksSubmittedFor = () => {
+    const userProgresses = data?.data?.responses?.map((it: any) => {
+      return it?.userProgress;
+    });
+    const filteredArr = userProgresses.filter(
+      (item: any) => item !== undefined
     );
+    return filteredArr.flat()?.map((it: any) => it?._id);
+  };
+
+  // const feedbacksSubmittedFor =
+  // Array.isArray(data?.data?.review) &&
+  // data?.data?.responses?.map(
+  //   (it: any) => feedbackReviewerEmail?.email === it.email && it?.userInfo?._id
+  // );
 
   return (
     <>
@@ -376,12 +511,12 @@ const FillFeedbackForm = () => {
           <Typography color="#595c6f" fontSize="14px" marginBottom="30px">
             *Required
           </Typography>
-          {(formQueDetails?.feedback_type === MTE &&
-            Array.isArray(formQueDetails?.review) &&
-            formQueDetails?.review?.length === 1 &&
+          {(data?.data?.feedback_type === MTE &&
+            Array.isArray(data?.data?.review) &&
+            data?.data?.review?.length === 1 &&
             peoplesToReviewArr?.length === 1) ||
-          (formQueDetails?.feedback_type === ETM &&
-            Object.keys(formQueDetails?.review).length) ? null : (
+          (data?.data?.feedback_type === ETM &&
+            Object.keys(data?.data?.review).length) ? null : (
             <Box marginBottom="20px">
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
                 Select feedback for
@@ -399,14 +534,14 @@ const FillFeedbackForm = () => {
                 }}
                 MenuProps={MenuProps}
               >
-                {peoplesToReviewArr?.map((it: any) => (
+                {data?.data?.review?.map((it: any) => (
                   <MenuItem
-                    key={it.id}
+                    key={it._id}
                     value={it}
-                    disabled={feedbacksSubmittedFor?.includes(it.id)}
+                    disabled={feedbacksSubmittedFor()?.includes(it._id)}
                     onClick={() => handleFeedbackOfChange(it)}
                   >
-                    {feedbacksSubmittedFor?.includes(it.id) ? (
+                    {feedbacksSubmittedFor()?.includes(it._id) ? (
                       <Box
                         display="flex"
                         justifyContent="space-between"
@@ -426,7 +561,7 @@ const FillFeedbackForm = () => {
               </Select>
             </Box>
           )}
-          {!feedbackParametersArr?.length ? (
+          {isLoading ? (
             <Box display="flex" flexDirection="column" gap="20px">
               {Array.from({ length: 8 }).map((_, index) => {
                 const uniqueKey = `item_${index}`;
@@ -441,8 +576,8 @@ const FillFeedbackForm = () => {
                 );
               })}
             </Box>
-          ) : feedbackParametersArr?.length ? (
-            feedbackParametersArr?.map((item: any, index: number) => {
+          ) : data?.data?.feedback_parameters?.length ? (
+            data?.data?.feedback_parameters?.map((item: any, index: number) => {
               return (
                 <>
                   <Box>
@@ -463,16 +598,16 @@ const FillFeedbackForm = () => {
                         <Slider
                           sx={{ padding: "30px 0" }}
                           defaultValue={0}
-                          value={formData[index]?.score}
+                          value={formData[index]?.score || 0}
                           disabled={
-                            Array.isArray(formQueDetails?.review) &&
+                            Array.isArray(data?.data?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
                             !feedbackUser &&
-                            formQueDetails?.review?.length !== 1
+                            data?.data?.review?.length !== 1
                           }
                           getAriaValueText={valuetext}
                           onChange={(e, value) =>
-                            handleScoreChange(item.id, value as number)
+                            handleScoreChange(item._id, value as number)
                           }
                           name={item.feedbackName}
                           valueLabelDisplay="auto"
@@ -496,16 +631,16 @@ const FillFeedbackForm = () => {
                         <InputField
                           type="text"
                           disabled={
-                            Array.isArray(formQueDetails?.review) &&
+                            Array.isArray(data?.data?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
                             !feedbackUser &&
-                            formQueDetails?.review?.length !== 1
+                            data?.data?.review?.length !== 1
                           }
                           onChange={(e: any) =>
-                            handleDescChange(item.id, e.target.value)
+                            handleDescChange(item._id, e.target.value)
                           }
                           value={
-                            formData.find((data) => data.id === item.id)
+                            formData.find((data: any) => data._id === item._id)
                               ?.description || ""
                           }
                           size="small"
@@ -542,10 +677,10 @@ const FillFeedbackForm = () => {
                         <InputField
                           type="text"
                           disabled={
-                            Array.isArray(formQueDetails?.review) &&
+                            Array.isArray(data?.data?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
                             !feedbackUser &&
-                            formQueDetails?.review?.length !== 1
+                            data?.data?.review?.length !== 1
                           }
                           sx={{
                             marginTop: "10px",
@@ -555,11 +690,11 @@ const FillFeedbackForm = () => {
                           }}
                           size="small"
                           value={
-                            formData.find((data) => data.id === item.id)
+                            formData?.find((data: any) => data._id === item._id)
                               ?.description || ""
                           }
                           onChange={(e: any) =>
-                            handleDescChange(item.id, e.target.value)
+                            handleDescChange(item._id, e.target.value)
                           }
                           id="score"
                           multiline
@@ -585,18 +720,18 @@ const FillFeedbackForm = () => {
                       <>
                         <Slider
                           sx={{ padding: "30px 0" }}
-                          value={formData[index]?.score}
+                          value={formData[index]?.score || 0}
                           disabled={
-                            Array.isArray(formQueDetails?.review) &&
+                            Array.isArray(data?.data?.review) &&
                             peoplesToReviewArr?.length !== 1 &&
                             !feedbackUser &&
-                            formQueDetails?.review?.length !== 1
+                            data?.data?.review?.length !== 1
                           }
                           defaultValue={0}
                           name={item.feedbackName}
                           getAriaValueText={valuetext}
                           onChange={(e, value) =>
-                            handleScoreChange(item.id, value as number)
+                            handleScoreChange(item._id, value as number)
                           }
                           valueLabelDisplay="auto"
                           step={1}
@@ -631,10 +766,10 @@ const FillFeedbackForm = () => {
               type="submit"
               variant="contained"
               disabled={
-                Array.isArray(formQueDetails?.review) &&
+                Array.isArray(data?.data?.review) &&
                 peoplesToReviewArr?.length !== 1 &&
                 !feedbackUser &&
-                formQueDetails?.review?.length !== 1
+                data?.data?.review?.length !== 1
               }
               onClick={() => setValidate(true)}
               text="Submit"

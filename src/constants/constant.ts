@@ -15,6 +15,8 @@ const deleteRoleCode = 3015;
 const addFeedbackFormCode = 3016;
 const updateFeedbackFormCode = 3019;
 const deleteFeedbackFormCode = 3020;
+const loginUserCode = 4001;
+const signupUserCode = 4002;
 
 const tableHeadings = [
   "S.No.",
@@ -41,4 +43,6 @@ export {
   addFeedbackFormCode,
   updateFeedbackFormCode,
   deleteFeedbackFormCode,
+  loginUserCode,
+  signupUserCode,
 };

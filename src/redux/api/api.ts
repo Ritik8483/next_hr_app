@@ -14,6 +14,22 @@ export const api = createApi({
       }),
     }),
 
+    signupAuthUser: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+    }),
+
+    loginAuthUser: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+    }),
+
     getAllFeedbackParameters: builder.query({
       query: (data) => ({
         url: data.page
@@ -167,6 +183,8 @@ export const api = createApi({
 
 export const {
   useLoginAdminUserMutation,
+  useLoginAuthUserMutation,
+  useSignupAuthUserMutation,
   useGetAllFeedbackParametersQuery,
   useAddFeedbackParameterMutation,
   useUpdateFeedbackParameterMutation,

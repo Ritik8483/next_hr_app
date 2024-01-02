@@ -35,6 +35,9 @@ const GenerateFeedbackDetail = () => {
   };
   const { data, isLoading } = useGetSingleFeedbackFormDetailQuery(payload);
 
+  console.log("data",data);
+  
+
   const handleOpenTable = (id: string) => {
     setOpenId(id);
     setOpen(!open);

@@ -20,6 +20,18 @@ const userLoginSchema = yup
   })
   .required();
 
+const userSignupSchema = yup
+  .object({
+    firstName: yup.string().required("First name is required"),
+    lastName: yup.string().required("Last name is required"),
+    email: yup.string().required("Email is required"),
+    password: yup
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .required("Password is required"),
+  })
+  .required();
+
 const userForgotPasswordSchema = yup
   .object({
     email: yup.string().required("Email is required"),
@@ -63,6 +75,7 @@ const generateFeedbackSchema = yup
 export {
   loginSchema,
   userLoginSchema,
+  userSignupSchema,
   addUserSchema,
   addRolesSchema,
   addFeedbacksSchema,
