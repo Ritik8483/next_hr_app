@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
@@ -12,7 +12,6 @@ import Typography from "@mui/material/Typography";
 import { Paper } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { MTE } from "@/constants/constant";
 
 const tableHeadingsMTE = ["S.No.", "Reviewer", "Email", "Designation"];
 
@@ -50,10 +49,7 @@ const MTEtable = (props: any) => {
         </TableHead>
         <TableBody>
           {feedbackResponseList?.responses
-            ?.filter((item: any) => typeof item !== "string")
             ?.map((row: any, index: number) => {
-              console.log("row", row);
-
               return (
                 <>
                   <TableRow
@@ -61,11 +57,6 @@ const MTEtable = (props: any) => {
                     sx={{ "& > *": { borderBottom: "unset" } }}
                   >
                     <TableCell>
-                      {/* {feedbackResponseList?.feedback_type === MTE &&
-                      feedbackResponseList?.review?.length === 1 &&
-                      Object.keys(feedbackResponseList?.review[0]).includes(
-                        "firstName"
-                      ) ? ( */}
                       <IconButton
                         aria-label="expand row"
                         size="small"
@@ -77,21 +68,6 @@ const MTEtable = (props: any) => {
                           <KeyboardArrowDownIcon />
                         )}
                       </IconButton>
-                      {/* // ) : 
-                      // (
-                      //   <IconButton
-                      //     aria-label="expand row"
-                      //     size="small"
-                      //     onClick={() => handleOpenTable(index)}
-                      //   >
-                      //     {openId === index && open ? (
-                      //       <KeyboardArrowUpIcon />
-                      //     ) : (
-                      //       <KeyboardArrowDownIcon />
-                      //     )}
-                      //   </IconButton>
-                      // )
-                      // } */}
                     </TableCell>
                     <TableCell component="th" scope="row">
                       {index + 1}
@@ -110,13 +86,6 @@ const MTEtable = (props: any) => {
                       <Collapse
                         in={
                           openAllCollapses || (openId === row?._id && open)
-                          // (feedbackResponseList?.feedback_type === MTE &&
-                          // feedbackResponseList?.review?.length === 1 &&
-                          // Object.keys(feedbackResponseList?.review[0]).includes(
-                          //   "firstName"
-                          // )
-                          //   ? openId === row?._id && open
-                          //   : openId === index && open)
                         }
                         timeout="auto"
                         unmountOnExit

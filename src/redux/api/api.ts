@@ -33,9 +33,9 @@ export const api = createApi({
     getAllFeedbackParameters: builder.query({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
           : data.search
-          ? `${data.url}?search=${data.search}`
+          ? `${data.url}?search=${data.search || ""}`
           : data.url,
       }),
       providesTags: ["Parameters"],
@@ -70,8 +70,8 @@ export const api = createApi({
     getAllUsers: builder.query({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
-          : `${data.url}?search=${data.search}`,
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          : `${data.url}?search=${data.search || ""}`,
       }),
       providesTags: ["Users"],
     }),
@@ -105,8 +105,8 @@ export const api = createApi({
     getAllRoles: builder.query<any, any>({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
-          : `${data.url}?search=${data.search}`,
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          : `${data.url}?search=${data.search || ""}`,
       }),
       providesTags: ["Roles"],
     }),
@@ -137,11 +137,20 @@ export const api = createApi({
       invalidatesTags: ["Roles"],
     }),
 
+    addGenerateFeedbackForm: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+      invalidatesTags: ["Generate"],
+    }),
+    
     getAllGenerateFeedbackForm: builder.query({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search}`
-          : `${data.url}?search=${data.search}`,
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          : `${data.url}?search=${data.search || ""}`,
       }),
       providesTags: ["Generate"],
     }),
@@ -151,15 +160,6 @@ export const api = createApi({
         url: `${data.url}/${data.id}`,
       }),
       providesTags: ["Generate"],
-    }),
-
-    addGenerateFeedbackForm: builder.mutation({
-      query: (data) => ({
-        url: data.url,
-        method: "POST",
-        body: data.body,
-      }),
-      invalidatesTags: ["Generate"],
     }),
 
     updateFeedbackForm: builder.mutation({

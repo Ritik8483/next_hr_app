@@ -33,10 +33,9 @@ const GenerateFeedbackDetail = () => {
     url: "feedback-form",
     id: generate_feedback_detail,
   };
-  const { data, isLoading } = useGetSingleFeedbackFormDetailQuery(payload);
-
-  console.log("data",data);
-  
+  const { data, isLoading } = useGetSingleFeedbackFormDetailQuery(payload,{
+    refetchOnMountOrArgChange:true
+  });  
 
   const handleOpenTable = (id: string) => {
     setOpenId(id);

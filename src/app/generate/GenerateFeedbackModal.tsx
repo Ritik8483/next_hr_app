@@ -33,7 +33,7 @@ import {
   updateFeedbackFormCode,
 } from "@/constants/constant";
 import {
-  useAddFeedbackParameterMutation,
+  useAddGenerateFeedbackFormMutation,
   useGetAllFeedbackParametersQuery,
   useGetAllRolesQuery,
   useGetAllUsersQuery,
@@ -89,7 +89,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const debouncedReviewer = useDebounce(searchReviewerText, 500);
   const debouncedFeedbacks = useDebounce(searchFeedbacks, 500);
 
-  const [addGenerateFeedbackForm] = useAddFeedbackParameterMutation();
+  const [addGenerateFeedbackForm] = useAddGenerateFeedbackFormMutation();
   const [updateFeedbackForm] = useUpdateFeedbackFormMutation();
 
   const usersPayload = {

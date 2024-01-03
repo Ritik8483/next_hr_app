@@ -35,16 +35,17 @@ const UserLogin = ({ settogglePage }: UserLoginPageInterface) => {
     url: "users",
   };
 
-  const { data } = useGetAllUsersQuery(payload);
+  const { data } = useGetAllUsersQuery(payload, {
+    refetchOnMountOrArgChange: true,
+  });
 
-  console.log("data",data);
-  
+  console.log("data", data);
 
   const [loginAuthUser] = useLoginAuthUserMutation();
 
   const handleLoginForm = async (inputData: any) => {
-    console.log("inputData",inputData);
-    
+    console.log("inputData", inputData);
+
     const filteredUser = data?.data?.filter(
       (item: any) => item.email === inputData?.email
     );
