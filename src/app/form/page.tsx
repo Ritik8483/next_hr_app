@@ -12,7 +12,7 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ETM, MTE } from "@/constants/constant";
 import {
   useGetSingleFeedbackFormDetailQuery,
+  useGetSingleUserQuery,
   useUpdateFeedbackFormMutation,
 } from "@/redux/api/api";
 import { storeUsersLoginToken } from "@/redux/slices/authSlice";
@@ -93,18 +94,21 @@ const FillFeedbackForm = () => {
   >([]);
   const feedbackId = searchParams.get("id");
 
-  const feedbackReviewerEmail = useSelector(
-    (state: any) => state.authSlice.userLoginDetails
-  );
-
   const payload = {
     url: "feedback-form",
-    id: feedbackId,
+    id: feedbackId?.split("?")[0],
   };
   const { data, isLoading, refetch, isFetching } =
     useGetSingleFeedbackFormDetailQuery(payload, {
       refetchOnMountOrArgChange: true,
     });
+
+  const payloadUser = {
+    url: "users",
+    id: feedbackId.split("=")[1],
+  };
+  const { data: feedbackReviewer } = useGetSingleUserQuery(payloadUser);
+
   const [updateFeedbackForm] = useUpdateFeedbackFormMutation();
   const [feedbackUser, setFeedbackUser] = useState<any>(
     data?.data?.feedback_type === ETM && data?.data?.review?.length === 1
@@ -148,7 +152,6 @@ const FillFeedbackForm = () => {
       return item.description.trim() === "" && item.score === "";
     } else false;
   });
-  console.log("feedbackUser",feedbackUser);
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -156,26 +159,29 @@ const FillFeedbackForm = () => {
       return;
     }
 
-    
     try {
       const payload = data?.data?.feedback_type === ETM && {
         ...allPrevData,
         responses: data?.data?.responses?.length
           ? data?.data?.responses?.map((it: any) => {
-              if (it._id === feedbackReviewerEmail?._id) {
+              if (it._id === feedbackReviewer?.data?._id) {
                 return {
                   ...it,
-                  userProgress: [{ ...data?.data?.review[0], form_response: formData }],
+                  userProgress: [
+                    { ...data?.data?.review[0], form_response: formData },
+                  ],
                 };
               } else {
                 return it;
               }
             })
           : data?.data?.reviewer?.map((it: any) => {
-              if (it._id === feedbackReviewerEmail?._id) {
+              if (it._id === feedbackReviewer?.data?._id) {
                 return {
                   ...it,
-                  userProgress: [{ ...data?.data?.review[0], form_response: formData }],
+                  userProgress: [
+                    { ...data?.data?.review[0], form_response: formData },
+                  ],
                 };
               } else {
                 return it;
@@ -188,7 +194,7 @@ const FillFeedbackForm = () => {
         responses: data?.data?.responses?.length
           ? data?.data?.responses?.map((it: any) => {
               if (
-                it._id === feedbackReviewerEmail?._id &&
+                it._id === feedbackReviewer?.data?._id &&
                 Object.keys(it).includes("userProgress")
               ) {
                 return {
@@ -198,7 +204,7 @@ const FillFeedbackForm = () => {
                     { ...feedbackUser, form_response: formData },
                   ],
                 };
-              } else if (it._id === feedbackReviewerEmail?._id) {
+              } else if (it._id === feedbackReviewer?.data?._id) {
                 return {
                   ...it,
                   userProgress: [{ ...feedbackUser, form_response: formData }],
@@ -208,9 +214,9 @@ const FillFeedbackForm = () => {
               }
             })
           : data?.data?.reviewer?.map((it: any) => {
-              if (feedbackUser._id && it._id === feedbackReviewerEmail?._id) {
+              if (feedbackUser._id && it._id === feedbackReviewer?.data?._id) {
                 return {
-                  ...feedbackReviewerEmail,
+                  ...feedbackReviewer?.data,
                   userProgress: [{ ...feedbackUser, form_response: formData }],
                 };
               } else return it;
@@ -224,7 +230,7 @@ const FillFeedbackForm = () => {
             ? [
                 ...data?.data?.responses,
                 {
-                  ...feedbackReviewerEmail,
+                  ...feedbackReviewer?.data,
                   userProgress: [
                     { ...data?.data?.review[0], form_response: formData },
                   ],
@@ -232,7 +238,7 @@ const FillFeedbackForm = () => {
               ]
             : [
                 {
-                  ...feedbackReviewerEmail,
+                  ...feedbackReviewer?.data,
                   userProgress: [
                     { ...data?.data?.review[0], form_response: formData },
                   ],
@@ -250,7 +256,6 @@ const FillFeedbackForm = () => {
             ? payloadMTE
             : payload,
       };
-      console.log("responsePayload", responsePayload);
 
       const resp = await updateFeedbackForm(responsePayload).unwrap();
       if (resp?.code) {
@@ -281,17 +286,13 @@ const FillFeedbackForm = () => {
         feedbacksSubmittedFor().includes(it._id)
       );
 
-    console.log("reviewerETMArr", reviewerETMArr);
-
     const response =
       data?.data?.feedback_type === ETM &&
       (data?.data?.feedback_type === ETM && data?.data?.reviewer?.length === 1
         ? data?.data?.review?.length === data?.data?.responses?.length
-        : reviewerETMArr?.some((item: any) => item?._id === feedbackReviewerEmail?._id));
-
-    console.log("resp", resp);
-    console.log("response", response);
-
+        : reviewerETMArr?.some(
+            (item: any) => item?._id === feedbackReviewer?.data?._id
+          ));
     if (resp) {
       setActivePage(true);
     } else if (response) {
@@ -323,11 +324,9 @@ const FillFeedbackForm = () => {
     setFeedbackUser(item);
   };
 
-  console.log("feedbackReviewerEmail", feedbackReviewerEmail);
-
   const feedbacksSubmittedFor = () => {
     const userProgresses = data?.data?.responses?.map((it: any) => {
-      if (it?._id === feedbackReviewerEmail?._id) {
+      if (it?._id === feedbackReviewer?.data?._id) {
         return it?.userProgress;
       }
     });
@@ -338,9 +337,6 @@ const FillFeedbackForm = () => {
 
     return filteredArr?.flat()?.map((it: any) => it?._id);
   };
-
-  console.log("data", data);
-  // console.log("feedbacksSubmittedFor", feedbacksSubmittedFor());
 
   return (
     <>
@@ -387,8 +383,6 @@ const FillFeedbackForm = () => {
                     displayEmpty
                     input={<OutlinedInput />}
                     renderValue={(selected: any) => {
-                      console.log("selected", selected);
-
                       if (
                         selected === undefined ||
                         !Object.keys(selected).length

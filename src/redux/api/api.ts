@@ -76,6 +76,14 @@ export const api = createApi({
       providesTags: ["Users"],
     }),
 
+    
+    getSingleUser: builder.query({
+      query: (data) => ({
+        url: `${data.url}/${data.id}`,
+      }),
+      providesTags: ["Users"],
+    }),
+
     addUser: builder.mutation({
       query: (data) => ({
         url: data.url,
@@ -199,6 +207,7 @@ export const {
   useUpdateFeedbackParameterMutation,
   useDeleteFeedbackParameterMutation,
   useGetAllUsersQuery,
+  useGetSingleUserQuery,
   useAddUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,

@@ -46,7 +46,7 @@ const GenerateFeedback = () => {
   const dispatch = useDispatch();
   const formRef: any = useRef<HTMLInputElement[] | null>([]);
   const [searchText, setSearchText] = useState<string>("");
-  const [publishFormId, setPublishFormId] = useState<number>();
+  const [publishFormId, setPublishFormId] = useState<string>("");
   const [feedbackFormModal, setFeedbackFormModal] = useState<boolean>(false);
   const [feedbackFormDetail, setFeedbackFormDetail] = useState({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -81,11 +81,8 @@ const GenerateFeedback = () => {
   };
 
   const handleSubmit = (item: any) => {
+    setPublishFormId(item._id);
     setIsSubmitting(true);
-    const payload = {
-      url: "send",
-      email: item,
-    };
     try {
       item.reviewer.map(async (it: any, index: number) => {
         const payload = {
@@ -104,7 +101,7 @@ const GenerateFeedback = () => {
               message: resp.message,
             })
           );
-          setIsSubmitting(true);
+          setIsSubmitting(false);
         }
       });
     } catch (error) {
@@ -317,9 +314,11 @@ const GenerateFeedback = () => {
                         >
                           <Buttons
                             variant="contained"
-                            disabled={publishFormId === index && isSubmitting}
+                            disabled={
+                              publishFormId === item._id && isSubmitting
+                            }
                             text={
-                              publishFormId === index && isSubmitting
+                              publishFormId === item._id && isSubmitting
                                 ? "Publishing..."
                                 : "Publish"
                             }

@@ -39,17 +39,14 @@ const UserLogin = ({ settogglePage }: UserLoginPageInterface) => {
     refetchOnMountOrArgChange: true,
   });
 
-  console.log("data", data);
 
   const [loginAuthUser] = useLoginAuthUserMutation();
 
   const handleLoginForm = async (inputData: any) => {
-    console.log("inputData", inputData);
 
     const filteredUser = data?.data?.filter(
       (item: any) => item.email === inputData?.email
     );
-    console.log("filteredUser", filteredUser);
 
     try {
       const payload = {
@@ -57,7 +54,6 @@ const UserLogin = ({ settogglePage }: UserLoginPageInterface) => {
         body: inputData,
       };
       const resp = await loginAuthUser(payload).unwrap();
-      console.log("resp", resp);
       if (resp?.code === loginUserCode) {
         dispatch(
           openAlert({
@@ -65,9 +61,9 @@ const UserLogin = ({ settogglePage }: UserLoginPageInterface) => {
             message: resp.message,
           })
         );
-        dispatch(storeUsersLoginToken(filteredUser[0]));
-        router.push(`/form?id=${paramsId}`);
-        reset();
+        // dispatch(storeUsersLoginToken(filteredUser[0]));
+        // router.push(`/form?id=${paramsId}`);
+        // reset();
       }
     } catch (error: any) {
       console.log("error", error);
