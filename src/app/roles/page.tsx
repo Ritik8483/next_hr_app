@@ -117,14 +117,14 @@ const Roles = () => {
         />
       </Box>
 
-      {!data?.data?.length || data === undefined ? (
-        <NoDataFound text="No data Found" />
-      ) : isLoading ? (
+      {isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
+      ) : !data?.data?.length ? (
+        <NoDataFound text="No data Found" />
       ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>

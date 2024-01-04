@@ -30,6 +30,7 @@ import { deleteFeedbackFormCode, limit } from "@/constants/constant";
 import {
   useDeleteFeedbackFormMutation,
   useGetAllGenerateFeedbackFormQuery,
+  useSendEmailMutation,
 } from "@/redux/api/api";
 
 const tableHeadings = [
@@ -66,6 +67,7 @@ const GenerateFeedback = () => {
 
   const { data, isLoading, error } =
     useGetAllGenerateFeedbackFormQuery(payload);
+  const [sendEmail] = useSendEmailMutation();
   const [deleteFeedbackForm] = useDeleteFeedbackFormMutation();
 
   const handleAddUser = () => {
@@ -78,37 +80,67 @@ const GenerateFeedback = () => {
     router.push(`/generate/${item._id}`);
   };
 
-  const handleSubmit = (e: any, index: number) => {
-    e.preventDefault();
-    setPublishFormId(index);
+  const handleSubmit = (item: any) => {
     setIsSubmitting(true);
-    emailjs
-      .sendForm(
-        `${process.env.NEXT_PUBLIC_EMAIL_SERVICE}`,
-        `${process.env.NEXT_PUBLIC_EMAIL_TEMPLATE}`,
-        formRef?.current[index],
-        `${process.env.NEXT_PUBLIC_EMAIL_KEY}`
-      )
-      .then(
-        (result) => {
+    const payload = {
+      url: "send",
+      email: item,
+    };
+    try {
+      item.reviewer.map(async (it: any, index: number) => {
+        const payload = {
+          url: "send",
+          body: {
+            email: it.email,
+            emailUrl: `${process.env.NEXT_PUBLIC_LOCAL_SERVER}form?id=${item._id}?user=${it._id}`,
+          },
+        };
+        const resp = await sendEmail(payload).unwrap();
+
+        if (index + 1 === item.reviewer.length && resp?.code === 5000) {
           dispatch(
             openAlert({
               type: "success",
-              message: "Mail sent",
+              message: resp.message,
             })
           );
-          setIsSubmitting(false);
-        },
-        (error) => {
-          dispatch(
-            openAlert({
-              type: "error",
-              message: `${error.text},please try again!`,
-            })
-          );
-          setIsSubmitting(false);
+          setIsSubmitting(true);
         }
-      );
+      });
+    } catch (error) {
+      console.log("error", error);
+    }
+
+    // e.preventDefault();
+    // setPublishFormId(index);
+    // setIsSubmitting(true);
+    // emailjs
+    //   .sendForm(
+    //     `${process.env.NEXT_PUBLIC_EMAIL_SERVICE}`,
+    //     `${process.env.NEXT_PUBLIC_EMAIL_TEMPLATE}`,
+    //     formRef?.current[index],
+    //     `${process.env.NEXT_PUBLIC_EMAIL_KEY}`
+    //   )
+    //   .then(
+    //     (result) => {
+    // dispatch(
+    //   openAlert({
+    //     type: "success",
+    //     message: "Mail sent",
+    //   })
+    // );
+    //       setIsSubmitting(false);
+    //     },
+    //     (error) => {
+    //       dispatch(
+    //         openAlert({
+    //           type: "error",
+    //           message: `${error.text},please try again!`,
+    //         })
+    //       );
+    //       setIsSubmitting(false);
+    //     }
+    //   );
   };
 
   const handleEdit = (item: any) => {
@@ -175,14 +207,14 @@ const GenerateFeedback = () => {
         />
       </Box>
 
-      {!data?.data?.length && data === undefined ? (
-        <NoDataFound text="No data Found" />
-      ) : isLoading ? (
+      {isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
+      ) : !data?.data?.length ? (
+        <NoDataFound text="No data Found" />
       ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>
@@ -274,19 +306,6 @@ const GenerateFeedback = () => {
                             />
                           )}
                         </Box>
-                        {/* <Box
-                          sx={{
-                            display: "flex",
-                            gap: "10px",
-                            justifyContent: "center",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                          }}
-                        >
-                          {item?.reviewer?.map((it: any) => (
-                            <Chip label={it.firstName + " " + it.lastName} />
-                          ))}
-                        </Box> */}
                       </StyledTableCell>
                       <StyledTableCell align="right">
                         <Box
@@ -305,7 +324,7 @@ const GenerateFeedback = () => {
                                 : "Publish"
                             }
                             size="small"
-                            onClick={(e: any) => handleSubmit(e, index)}
+                            onClick={() => handleSubmit(item)}
                             type="submit"
                           />
                           <EditIcon
@@ -320,7 +339,7 @@ const GenerateFeedback = () => {
                           />
                         </Box>
                       </StyledTableCell>
-                      <form
+                      {/* <form
                         ref={(el: any) => {
                           if (el && formRef.current[index]) {
                             // Update the ref for the corresponding form element
@@ -328,7 +347,6 @@ const GenerateFeedback = () => {
                           }
                         }}
                         key={item._id}
-                        // onSubmit={(e: any) => handleSubmit(e, index)}
                       >
                         <input
                           name="to_email"
@@ -348,7 +366,7 @@ const GenerateFeedback = () => {
                           }
                           style={{ visibility: "hidden" }}
                         />
-                      </form>
+                      </form> */}
                     </StyledTableRow>
                   );
                 })}

@@ -178,6 +178,15 @@ export const api = createApi({
       }),
       invalidatesTags: ["Generate"],
     }),
+
+    sendEmail: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+    }),
+
   }),
 });
 
@@ -202,7 +211,9 @@ export const {
   useAddGenerateFeedbackFormMutation,
   useUpdateFeedbackFormMutation,
   useDeleteFeedbackFormMutation,
+  useSendEmailMutation
 } = api;
+
 
 //DOCS
 //https://redux-toolkit.js.org/tutorials/rtk-query

@@ -120,14 +120,14 @@ const Users = () => {
         />
       </Box>
 
-      {!data?.data?.length || data === undefined ? (
-        <NoDataFound text="No data Found" />
-      ) : isLoading ? (
+      {isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
+      ) : !data?.data?.length ? (
+        <NoDataFound text="No data Found" />
       ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>
@@ -178,11 +178,7 @@ const Users = () => {
                       align="right"
                       onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
-                      <Box
-                        display="flex"
-                        gap="15px"
-                        justifyContent="flex-end"
-                      >
+                      <Box display="flex" gap="15px" justifyContent="flex-end">
                         <EditIcon
                           onClick={() => handleEdit(item)}
                           sx={{ cursor: "pointer", color: "var(--iconGrey)" }}

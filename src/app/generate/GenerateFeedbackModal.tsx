@@ -94,17 +94,17 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
   const usersPayload = {
     url: "users",
-    search: debouncedReview || "",
+    search: debouncedReviewer || debouncedReview,
   };
 
   const rolesPayload = {
     url: "roles",
-    search: debouncedReviewer || "",
+    search: debouncedReviewer,
   };
 
   const feedbacksPayload = {
     url: "feedback-parameters",
-    search: debouncedFeedbacks || "",
+    search: debouncedFeedbacks,
   };
   const { data: usersData } = useGetAllUsersQuery(usersPayload);
   const { data: feedbackParametersData } =
@@ -498,7 +498,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 Reviewer(web-team)
               </InputLabel>
               <Select
-                disabled={!feedbackFormType}
+                disabled={
+                  !feedbackFormType ||
+                  (feedbackFormType === ETM && !reviewType) ||
+                  (feedbackFormType === MTE && !multipleReviewType.length)
+                }
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
                 value={reviewerType}
                 multiple
@@ -555,6 +559,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                       <MenuItem
                         key={it._id}
                         value={it}
+                        disabled={
+                          multipleReviewType
+                            ?.map((item: any) => item?._id)
+                            .includes(it._id) || reviewType?._id === it._id
+                        }
                         onClick={() => handleReviewerChange(it)}
                       >
                         <Checkbox
@@ -574,6 +583,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     return (
                       <MenuItem
                         key={it._id}
+                        disabled={
+                          multipleReviewType
+                            ?.map((item: any) => item?._id)
+                            .includes(it._id) || reviewType?._id === it._id
+                        }
                         value={it}
                         onClick={() => handleReviewerChange(it)}
                       >
@@ -612,7 +626,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 Feedback Parameters
               </InputLabel>
               <Select
-                disabled={!feedbackFormType}
+                disabled={
+                  !feedbackFormType ||
+                  (feedbackFormType === ETM && !reviewType) ||
+                  (feedbackFormType === MTE && !multipleReviewType.length)
+                }
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
                 value={feedbackParametersArr}
                 displayEmpty

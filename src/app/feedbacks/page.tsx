@@ -24,7 +24,11 @@ import { StyledTableCell, StyledTableRow } from "@/styles/styles";
 import NoDataFound from "@/components/resuseables/NoDataFound";
 import PaginationTable from "@/components/resuseables/Pagination";
 import { openAlert } from "@/redux/slices/snackBarSlice";
-import { deleteFeedbackParameterCode, limit, tableHeadings } from "@/constants/constant";
+import {
+  deleteFeedbackParameterCode,
+  limit,
+  tableHeadings,
+} from "@/constants/constant";
 import {
   useDeleteFeedbackParameterMutation,
   useGetAllFeedbackParametersQuery,
@@ -118,14 +122,14 @@ const Feedbacks = () => {
         />
       </Box>
 
-      {!data?.data?.length || data === undefined ? (
-        <NoDataFound text="No data Found" />
-      ) : isLoading ? (
+      {isLoading ? (
         <SkeletonTable
           variant="rounded"
           width="100%"
           height="calc(100vh - 180px)"
         />
+      ) : !data?.data?.length ? (
+        <NoDataFound text="No data Found" />
       ) : data?.data?.length ? (
         <>
           <TableContainer component={Paper}>
