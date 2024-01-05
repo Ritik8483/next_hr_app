@@ -23,7 +23,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { usePathname, useRouter } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { closeAlert, openAlert } from "@/redux/slices/snackBarSlice";
 import Snackbar from "@mui/material/Snackbar";
@@ -32,8 +32,6 @@ import {
   clearLoginDetails,
   storeSidebarOption,
 } from "@/redux/slices/authSlice";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/firebaseConfig";
 import AlertBox from "@/components/resuseables/AlertBox";
 
 const drawerWidth = 240;
@@ -93,10 +91,10 @@ export default function SidebarDrawer({ children }: any) {
   const router: any = useRouter();
   const dispatch = useDispatch();
   const snackbar = useSelector((state: any) => state.snackbarSlice);
-  const accessToken = useSelector((state: any) => state.authSlice.userToken);
   const sidebarOption = useSelector(
     (state: any) => state.authSlice.sidebarOption
   );
+  const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
 
   const [open, setOpen] = useState(false);
   const [option, setOption] = useState(sidebarOption || "Dashboard");
@@ -111,43 +109,25 @@ export default function SidebarDrawer({ children }: any) {
   };
 
   useEffect(() => {
-    onAuthStateChanged(auth, (user: any) => {
-      if (user?.accessToken && pathname === "/login") {
-        router.push(sidebarOption.toLowerCase());
-      }
-    });
-  }, [pathname === "/login"]);
+    if (!Object.keys(userToken).length && pathname!=="/") {      
+      redirect("/")
+    }
+  }, []);
 
   const handleClose = (value: string) => {
     setOpenAlertBox(false);
   };
 
   const handleLogout = () => {
-    signOut(auth)
-      .then(() => {
-        dispatch(
-          openAlert({
-            type: "success",
-            message: "Logged out successfully!",
-          })
-        );
-        dispatch(clearLoginDetails(null));
-        dispatch(storeSidebarOption(""));
-        localStorage.clear();
-        router.push("/login");
-        // Sign-out successful.
-      })
-      .catch((error) => {
-        console.log("error", error);
-
-        // An error happened.
-      });
+    dispatch(clearLoginDetails(null));
+    dispatch(storeSidebarOption(""));
+    localStorage.clear();
+    router.push("/");
   };
 
   const handleSidebarNavigation = (text: string) => {
     const pathNameArr: any = pathname?.split("/");
     const str = text.toLowerCase();
-    localStorage.removeItem("generateId");
     if (pathNameArr?.length > 2) {
       router.push(`${process.env.NEXT_PUBLIC_LOCAL_SERVER}${str}`);
       setOption(text);

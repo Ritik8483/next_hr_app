@@ -75,7 +75,6 @@ const GenerateFeedback = () => {
   };
 
   const handleRowClick = (item: any) => {
-    localStorage.setItem("generateId", JSON.stringify(`/generate/${item._id}`));
     router.push(`/generate/${item._id}`);
   };
 

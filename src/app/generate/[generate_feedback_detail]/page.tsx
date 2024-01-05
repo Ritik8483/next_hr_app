@@ -40,7 +40,6 @@ const GenerateFeedbackDetail = () => {
   };
 
   const handleGenerte = () => {
-    localStorage.removeItem("generateId");
     router.push("/generate");
   };
 

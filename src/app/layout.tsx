@@ -9,7 +9,10 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { useEffect } from "react";
 import SidebarDrawer from "@/pages/Drawer";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  redirect,
+  usePathname,
+} from "next/navigation";
 const inter = Inter({ subsets: ["latin"] });
 
 const metadata: Metadata = {
@@ -23,46 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const persistor = persistStore(store);
-  const router: any = useRouter();
   const pathname = usePathname();
-  const params = useSearchParams();
 
-  const paramsId = params?.get("id");
+  const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
 
-  const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
-  const detailPagesId = JSON.parse(localStorage.getItem("generateId") || "{}");
-
-  const userFirebaseToken = JSON.parse(
-    localStorage.getItem("userFirebaseToken") || "{}"
-  );
   useEffect(() => {
-    if (
-      Object.keys(userFirebaseToken).length &&
-      pathname === "/login" &&
-      userFirebaseToken?.email === "ritik.chauhan@quokkalabs.com"
-    ) {
-      router.push(sidebarText.toLowerCase());
-    } else if (
-      Object.keys(userFirebaseToken).length &&
-      userFirebaseToken?.email === "ritik.chauhan@quokkalabs.com"
-    ) {
-      router.push(
-        Object.keys(detailPagesId).length
-          ? detailPagesId
-          : Object.keys(sidebarText).length > 1
-          ? sidebarText.toLowerCase()
-          : "/dashboard"
-      );
-    } else {
-      router.push(
-        pathname === "/form"
-          ? `/form?id=${paramsId}`
-          : pathname === "/user-login"
-          ? `/user-login?id=${paramsId}`
-          : "/login"
-      );
+    if (!Object.keys(userToken).length && pathname !== "/") {
+      redirect("/");
     }
-    // });
   }, []);
 
   return (
@@ -70,10 +41,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
-            {Object.keys(userFirebaseToken).length && pathname === "/login" ? (
-              router.push(sidebarText.toLowerCase())
-            ) : Object.keys(userFirebaseToken).length &&
-              userFirebaseToken?.email === "ritik.chauhan@quokkalabs.com" ? (
+            {(Object.keys(userToken).length && userToken) ||
+            (!Object.keys(userToken).length && pathname !== "/") ? (
               <SidebarDrawer>{children}</SidebarDrawer>
             ) : (
               children

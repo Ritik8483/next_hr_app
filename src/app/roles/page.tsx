@@ -93,7 +93,6 @@ const Roles = () => {
   };
 
   const handleRowClick = (id: string) => {
-    localStorage.setItem("generateId", JSON.stringify(`/users/${id}`));
     router.push(`roles/${id}`);
   };
 

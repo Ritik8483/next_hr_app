@@ -14,22 +14,6 @@ export const api = createApi({
       }),
     }),
 
-    signupAuthUser: builder.mutation({
-      query: (data) => ({
-        url: data.url,
-        method: "POST",
-        body: data.body,
-      }),
-    }),
-
-    loginAuthUser: builder.mutation({
-      query: (data) => ({
-        url: data.url,
-        method: "POST",
-        body: data.body,
-      }),
-    }),
-
     getAllFeedbackParameters: builder.query({
       query: (data) => ({
         url: data.page
@@ -200,8 +184,6 @@ export const api = createApi({
 
 export const {
   useLoginAdminUserMutation,
-  useLoginAuthUserMutation,
-  useSignupAuthUserMutation,
   useGetAllFeedbackParametersQuery,
   useAddFeedbackParameterMutation,
   useUpdateFeedbackParameterMutation,
@@ -222,10 +204,3 @@ export const {
   useDeleteFeedbackFormMutation,
   useSendEmailMutation
 } = api;
-
-
-//DOCS
-//https://redux-toolkit.js.org/tutorials/rtk-query
-// https://redux-toolkit.js.org/rtk-query/api/createApi  --- Create API
-// https://redux-toolkit.js.org/rtk-query/api/created-api/redux-integration --- Redux Integeration AND store
-// https://redux-toolkit.js.org/rtk-query/usage/automated-refetching#providing-tags --tags
