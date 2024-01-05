@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {  useState } from "react";
 import Modal from "@mui/material/Modal";
 import { modalCrossStyle, modalStyles } from "@/styles/styles";
 import Box from "@mui/material/Box";
@@ -48,7 +48,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
   const [personName, setPersonName] = useState<any>(
     rolesDetail?._id ? rolesDetail?.teamUsers : []
   );
-  const [usersList, setUsersList] = useState([]);
   const [validateUsers, setValidateUsers] = useState(false);
 
   const payload = {
@@ -94,8 +93,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
           body: { ...data, teamUsers: personName.map((it: any) => it._id) },
         };
 
-        console.log("payload", payload);
-
         const resp = await addRole(payload).unwrap();
         if (resp?.code === addRoleCode) {
           dispatch(
@@ -133,8 +130,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
     if (personNames.length) setValidateUsers(false);
     else setValidateUsers(true);
   };
-
-  console.log("personNames", personName);
 
   const userIds = personName?.map((it: any) => it._id);
 
@@ -180,7 +175,6 @@ const AddRolesModal = (props: AddRolesModalInterface) => {
                 value={personName}
                 input={<OutlinedInput />}
                 renderValue={(selected: any) => {
-                  console.log("selected", selected);
                   if (selected.length === 0) {
                     return <>Select Person</>;
                   }

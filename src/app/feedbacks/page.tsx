@@ -57,8 +57,6 @@ const Feedbacks = () => {
   const { data, isLoading, error } = useGetAllFeedbackParametersQuery(payload);
   const [deleteFeedbackParameter] = useDeleteFeedbackParameterMutation();
 
-  console.log("data", data);
-
   const handleAddUser = () => {
     setFeedbackDetail({});
     setOpenFeedbackModal(true);

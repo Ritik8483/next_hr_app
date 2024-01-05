@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import emailjs from "@emailjs/browser";
 import SearchField from "@/components/resuseables/SearchField";
 import Buttons from "@/components/resuseables/Buttons";
 import GenerateFeedbackModal from "./GenerateFeedbackModal";
@@ -107,37 +106,6 @@ const GenerateFeedback = () => {
     } catch (error) {
       console.log("error", error);
     }
-
-    // e.preventDefault();
-    // setPublishFormId(index);
-    // setIsSubmitting(true);
-    // emailjs
-    //   .sendForm(
-    //     `${process.env.NEXT_PUBLIC_EMAIL_SERVICE}`,
-    //     `${process.env.NEXT_PUBLIC_EMAIL_TEMPLATE}`,
-    //     formRef?.current[index],
-    //     `${process.env.NEXT_PUBLIC_EMAIL_KEY}`
-    //   )
-    //   .then(
-    //     (result) => {
-    // dispatch(
-    //   openAlert({
-    //     type: "success",
-    //     message: "Mail sent",
-    //   })
-    // );
-    //       setIsSubmitting(false);
-    //     },
-    //     (error) => {
-    //       dispatch(
-    //         openAlert({
-    //           type: "error",
-    //           message: `${error.text},please try again!`,
-    //         })
-    //       );
-    //       setIsSubmitting(false);
-    //     }
-    //   );
   };
 
   const handleEdit = (item: any) => {
@@ -338,34 +306,6 @@ const GenerateFeedback = () => {
                           />
                         </Box>
                       </StyledTableCell>
-                      {/* <form
-                        ref={(el: any) => {
-                          if (el && formRef.current[index]) {
-                            // Update the ref for the corresponding form element
-                            formRef.current[index] = el;
-                          }
-                        }}
-                        key={item._id}
-                      >
-                        <input
-                          name="to_email"
-                          defaultValue={item.reviewerEmails}
-                          style={{ visibility: "hidden" }}
-                        />
-                        <input
-                          name="message"
-                          defaultValue={`${process.env.NEXT_PUBLIC_LOCAL_SERVER}user-login?id=${item._id}`}
-                          style={{ visibility: "hidden" }}
-                        />
-
-                        <input
-                          name="user_name"
-                          defaultValue={
-                            item.review.firstName + " " + item.review.lastName
-                          }
-                          style={{ visibility: "hidden" }}
-                        />
-                      </form> */}
                     </StyledTableRow>
                   );
                 })}

@@ -13,7 +13,6 @@ import { closeAlert, openAlert } from "@/redux/slices/snackBarSlice";
 import { loginSchema } from "@/schema/schema";
 import { AppDispatch } from "@/redux/store";
 import Buttons from "@/components/resuseables/Buttons";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { formContainer } from "@/styles/styles";
 import { IFormInput } from "@/interface/Interface";
 import { useLoginAdminUserMutation } from "@/redux/api/api";
@@ -23,7 +22,6 @@ const Login = () => {
   const {
     register,
     handleSubmit,
-    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<any>({
@@ -44,7 +42,6 @@ const Login = () => {
           body: data,
         };
         const resp = await loginAdminUser(payload).unwrap();
-        console.log("resp", resp);
         if (resp?.data?.token) {
           dispatch(storeLoginToken(resp?.data?.token));
           localStorage.setItem("sidebarText", JSON.stringify("Dashboard"));
@@ -61,27 +58,6 @@ const Login = () => {
           reset();
           router.push("/dashboard");
         }
-
-        // const reqObj = { auth, email: data.email, password: data.password };
-        // const resp: any = await dispatch(signInWithEmail(reqObj)).unwrap();
-        // const resp: any = await signInWithEmailAndPassword(
-        //   auth,
-        //   data.email,
-        //   data.password
-        // );
-
-        // if (resp?.user?.accessToken) {
-        //   localStorage.setItem("sidebarText", JSON.stringify("Dashboard"));
-        //   localStorage.setItem("userFirebaseToken", JSON.stringify(resp?.user));
-        //   dispatch(
-        //     openAlert({
-        //       type: "success",
-        //       message: "User logged in successfully!",
-        //     })
-        //   );
-        //   reset();
-        //   router.push("/dashboard");
-        // }
       } catch (error) {
         dispatch(
           openAlert({

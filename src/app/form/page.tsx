@@ -12,18 +12,16 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
-import { useDispatch, useSelector } from "react-redux";
 import { ETM, MTE } from "@/constants/constant";
 import {
   useGetSingleFeedbackFormDetailQuery,
   useGetSingleUserQuery,
   useUpdateFeedbackFormMutation,
 } from "@/redux/api/api";
-import { storeUsersLoginToken } from "@/redux/slices/authSlice";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -85,8 +83,6 @@ const sliderLabels = [
 
 const FillFeedbackForm = () => {
   const searchParams: any = useSearchParams();
-  const dispatch = useDispatch();
-
   const [validate, setValidate] = useState(false);
   const [activePage, setActivePage] = useState(false);
   const [formData, setFormData] = useState<
