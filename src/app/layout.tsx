@@ -9,10 +9,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { useEffect } from "react";
 import SidebarDrawer from "@/pages/Drawer";
-import {
-  redirect,
-  usePathname,
-} from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 const inter = Inter({ subsets: ["latin"] });
 
 const metadata: Metadata = {
@@ -26,12 +23,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const persistor = persistStore(store);
-  const pathname = usePathname();
+  const pathname: any = usePathname();
 
   const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
 
   useEffect(() => {
+    if (
+      !Object.keys(userToken).length &&
+      pathname.split("/").includes("form")
+    ) {
+
+      return;
+    }
     if (!Object.keys(userToken).length && pathname !== "/") {
+      alert("called");
       redirect("/");
     }
   }, []);
@@ -41,8 +46,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
-            {(Object.keys(userToken).length && userToken) ||
-            (!Object.keys(userToken).length && pathname !== "/") ? (
+            {!Object.keys(userToken).length &&
+            pathname.split("/").includes("form") ? (
+              children
+            ) : (Object.keys(userToken).length && userToken) ||
+              (!Object.keys(userToken).length && pathname !== "/") ? (
               <SidebarDrawer>{children}</SidebarDrawer>
             ) : (
               children

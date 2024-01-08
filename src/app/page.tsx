@@ -37,7 +37,7 @@ const Login = () => {
   });
 
   const router = useRouter();
-  const pathname:any = usePathname();
+  const pathname: any = usePathname();
   const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
   const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
   const dispatch: AppDispatch = useDispatch();
@@ -86,10 +86,9 @@ const Login = () => {
 
   useEffect(() => {
     if (Object.keys(userToken).length && pathname === "/") {
-      redirect(sidebarText.toLowerCase())
-    }
-    else if(Object.keys(userToken).length && pathname !== "/"){
-      redirect(pathname)
+      redirect(sidebarText.toLowerCase());
+    } else if (Object.keys(userToken).length && pathname !== "/") {
+      redirect(pathname);
     }
   }, []);
 

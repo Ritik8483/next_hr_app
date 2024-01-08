@@ -109,8 +109,8 @@ export default function SidebarDrawer({ children }: any) {
   };
 
   useEffect(() => {
-    if (!Object.keys(userToken).length && pathname!=="/") {      
-      redirect("/")
+    if (!Object.keys(userToken).length && pathname !== "/") {
+      redirect("/");
     }
   }, []);
 
