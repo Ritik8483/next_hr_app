@@ -16,6 +16,7 @@ import { DownloadTableExcel } from "react-export-table-to-excel";
 import { useGetSingleFeedbackFormDetailQuery } from "@/redux/api/api";
 import Buttons from "@/components/resuseables/Buttons";
 import SAtable from "./SAtable";
+import ETMAnonymousTable from "./ETMAnonymousTable";
 
 const GenerateFeedbackDetail = () => {
   const router: any = useRouter();
@@ -138,6 +139,10 @@ const GenerateFeedbackDetail = () => {
               openAllCollapses={openAllCollapses}
             />
           </>
+        ) : data?.data?.feedback_type === ETM &&
+          data?.data?.responses?.length &&
+          data?.data?.anonymous ? (
+          <ETMAnonymousTable feedbackResponseList={data?.data} />
         ) : data?.data?.feedback_type === ETM &&
           data?.data?.responses?.length ? (
           <>

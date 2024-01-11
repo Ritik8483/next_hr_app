@@ -13,6 +13,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import {
   Checkbox,
   Divider,
+  FormControlLabel,
   InputLabel,
   ListItemText,
   ListSubheader,
@@ -87,6 +88,9 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       []
   );
   const [validate, setValidate] = useState(false);
+  const [anonymous, setAnonymous] = useState(
+    feedbackFormDetail?.anonymous || false
+  );
   const [searchReviewText, setSearchReviewText] = useState<string>("");
   const [searchReviewerText, setSearchReviewerText] = useState<string>("");
   const [reviewType, setReviewType] = useState<any>(
@@ -243,6 +247,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       reviewer: allUsersArr,
       feedback_parameters: feedParameters,
       reviewerEmails: filteredEmails.toString(),
+      anonymous: feedbackFormType === ETM ? anonymous : undefined,
     };
 
     try {
@@ -307,6 +312,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       e.stopPropagation();
     }
   };
+
+  console.log("anonymous", anonymous);
 
   return (
     <Modal
@@ -749,6 +756,18 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 </Typography>
               )}
             </Box>
+            {feedbackFormType === ETM && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    value={anonymous}
+                    defaultChecked={feedbackFormDetail?.anonymous}
+                    onClick={() => setAnonymous(!anonymous)}
+                  />
+                }
+                label="Anonymous"
+              />
+            )}
           </Box>
           <Box
             display="flex"

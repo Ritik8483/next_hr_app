@@ -12,7 +12,7 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { useSearchParams } from "next/navigation";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
@@ -189,6 +189,17 @@ const FillFeedbackForm = () => {
             }),
       };
 
+      const payloadETMAnonymous = data?.data?.feedback_type === ETM &&
+        data?.data?.anonymous && {
+          ...allPrevData,
+          people_reviewed: data?.data?.people_reviewed
+            ? [...data?.data?.people_reviewed, feedbackReviewer?.data?._id]
+            : [feedbackReviewer?.data?._id],
+          responses: data?.data?.responses?.length
+            ? [...data?.data?.responses, ...formData]
+            : [...formData],
+        };
+
       const payloadSelfAssessment = data?.data?.feedback_type === SA && {
         ...allPrevData,
         responses: data?.data?.responses?.length
@@ -281,6 +292,8 @@ const FillFeedbackForm = () => {
             ? payloadMTE
             : data?.data?.feedback_type === SA
             ? payloadSelfAssessment
+            : data?.data?.feedback_type === ETM && data?.data?.anonymous
+            ? payloadETMAnonymous
             : payload,
       };
 
@@ -338,7 +351,16 @@ const FillFeedbackForm = () => {
         (item: any) => item?._id === feedbackReviewer?.data?._id
       );
 
-    if (resp || responseSA || response) {
+    const finalRespAnonymous =
+      data?.data?.feedback_type === ETM &&
+      data?.data?.anonymous &&
+      data?.data?.reviewer?.some(
+        (it: any) =>
+          window.location.search.split("user=")[1] === it._id &&
+          data?.data?.people_reviewed?.includes(it._id)
+      );
+
+    if (resp || responseSA || response || finalRespAnonymous) {
       setActivePage(true);
     } else {
       setActivePage(false);
