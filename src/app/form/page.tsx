@@ -16,7 +16,7 @@ import { useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
-import { ETM, MTE } from "@/constants/constant";
+import { ETM, MTE, SA } from "@/constants/constant";
 import {
   useGetSingleFeedbackFormDetailQuery,
   useGetSingleUserQuery,
@@ -135,7 +135,10 @@ const FillFeedbackForm = () => {
     feedback_parameters: data?.data?.feedback_parameters?.map(
       (it: any) => it._id
     ),
-    review: data?.data?.review?.map((it: any) => it._id),
+    review:
+      data?.data?.feedback_type === SA
+        ? undefined
+        : data?.data?.review?.map((it: any) => it._id),
     reviewer: data?.data?.reviewer?.map((it: any) => it._id),
   };
 
@@ -148,6 +151,7 @@ const FillFeedbackForm = () => {
       return item.description.trim() === "" && item.score === "";
     } else false;
   });
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -178,6 +182,31 @@ const FillFeedbackForm = () => {
                   userProgress: [
                     { ...data?.data?.review[0], form_response: formData },
                   ],
+                };
+              } else {
+                return it;
+              }
+            }),
+      };
+
+      const payloadSelfAssessment = data?.data?.feedback_type === SA && {
+        ...allPrevData,
+        responses: data?.data?.responses?.length
+          ? data?.data?.responses?.map((it: any) => {
+              if (it._id === feedbackReviewer?.data?._id) {
+                return {
+                  ...it,
+                  form_response: formData,
+                };
+              } else {
+                return it;
+              }
+            })
+          : data?.data?.reviewer?.map((it: any) => {
+              if (it._id === feedbackReviewer?.data?._id) {
+                return {
+                  ...it,
+                  form_response: formData,
                 };
               } else {
                 return it;
@@ -250,6 +279,8 @@ const FillFeedbackForm = () => {
             ? payloadSingleMTE
             : data?.data?.feedback_type === MTE
             ? payloadMTE
+            : data?.data?.feedback_type === SA
+            ? payloadSelfAssessment
             : payload,
       };
 
@@ -276,6 +307,16 @@ const FillFeedbackForm = () => {
         })
         .filter((item: any) => item !== undefined);
 
+    const reviewerSA =
+      data?.data?.feedback_type === SA &&
+      data?.data?.responses
+        ?.map((item: any) => {
+          if (Object.keys(item).includes("form_response")) {
+            return item;
+          }
+        })
+        .filter((item: any) => item !== undefined);
+
     const resp =
       data?.data?.feedback_type === MTE &&
       data?.data?.review?.every((it: any) =>
@@ -289,9 +330,15 @@ const FillFeedbackForm = () => {
         : reviewerETMArr?.some(
             (item: any) => item?._id === feedbackReviewer?.data?._id
           ));
-    if (resp) {
-      setActivePage(true);
-    } else if (response) {
+
+    const responseSA =
+      data?.data?.feedback_type === SA &&
+      data?.data?.feedback_type === SA &&
+      reviewerSA?.some(
+        (item: any) => item?._id === feedbackReviewer?.data?._id
+      );
+
+    if (resp || responseSA || response) {
       setActivePage(true);
     } else {
       setActivePage(false);
@@ -366,7 +413,8 @@ const FillFeedbackForm = () => {
               </Typography>
               {(data?.data?.feedback_type === MTE &&
                 data?.data?.review?.length === 1) ||
-              data?.data?.feedback_type === ETM ? null : (
+              data?.data?.feedback_type === ETM ||
+              data?.data?.feedback_type === SA ? null : (
                 <Box marginBottom="20px">
                   <InputLabel
                     sx={{ fontSize: "12px", color: "var(--iconGrey)" }}

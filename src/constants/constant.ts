@@ -1,5 +1,6 @@
 const ETM = "Employees to Manager";
 const MTE = "Manager to Employees";
+const SA = "Self Assessment";
 
 const limit = 10;
 
@@ -29,6 +30,7 @@ const tableHeadings = [
 export {
   ETM,
   MTE,
+  SA,
   tableHeadings,
   limit,
   addFeedbackParameterCode,

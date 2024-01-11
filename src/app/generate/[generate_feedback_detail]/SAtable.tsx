@@ -24,7 +24,7 @@ const tableHeadings = [
 
 const tableSubHeadings = ["S.No.", "Feedback Name", "Score", "Description"];
 
-const ETMtable = (props: any) => {
+const SAtable = (props: any) => {
   const {
     feedbackResponseList,
     handleOpenTable,
@@ -32,7 +32,6 @@ const ETMtable = (props: any) => {
     openId,
     openAllCollapses,
   } = props;
-
   return (
     <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
       <Table aria-label="collapsible table">
@@ -87,67 +86,46 @@ const ETMtable = (props: any) => {
                     timeout="auto"
                     unmountOnExit
                   >
-                    {row.userProgress?.map((items: any) => {
-                      return (
-                        <>
-                          <Box sx={{ margin: 1 }}>
-                            <Typography
-                              variant="h6"
-                              gutterBottom
-                              component="div"
-                            >
-                              {items.firstName +
-                                " " +
-                                items.lastName +
-                                " " +
-                                "(" +
-                                items.email +
-                                ")"}
-                            </Typography>
-                            <Table size="small" aria-label="purchases">
-                              <TableHead>
-                                <TableRow>
-                                  {tableSubHeadings.map((item: string) => (
-                                    <TableCell
-                                      align={
-                                        item === "S.No." ? "left" : "center"
-                                      }
-                                      key={item}
-                                    >
-                                      {item}
-                                    </TableCell>
-                                  ))}
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {items?.form_response?.map(
-                                  (historyRow: any, index: number) => (
-                                    <TableRow key={historyRow._id}>
-                                      <TableCell component="th" scope="row">
-                                        {index + 1}
-                                      </TableCell>
-                                      <TableCell align="center">
-                                        {historyRow.feedbackName}
-                                      </TableCell>
-                                      <TableCell align="center">
-                                        {historyRow.score === ""
-                                          ? "__"
-                                          : historyRow.score}
-                                      </TableCell>
-                                      <TableCell align="center">
-                                        {historyRow.description === ""
-                                          ? "__"
-                                          : historyRow.description}
-                                      </TableCell>
-                                    </TableRow>
-                                  )
-                                )}
-                              </TableBody>
-                            </Table>
-                          </Box>
-                        </>
-                      );
-                    })}
+                    <Box sx={{ margin: 1 }}>
+                      <Table size="small" aria-label="purchases">
+                        <TableHead>
+                          <TableRow>
+                            {tableSubHeadings.map((item: string) => (
+                              <TableCell
+                                align={item === "S.No." ? "left" : "center"}
+                                key={item}
+                              >
+                                {item}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {row?.form_response?.map(
+                            (historyRow: any, index: number) => (
+                              <TableRow key={historyRow._id}>
+                                <TableCell component="th" scope="row">
+                                  {index + 1}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {historyRow.feedbackName}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {historyRow.score === ""
+                                    ? "__"
+                                    : historyRow.score}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {historyRow.description === ""
+                                    ? "__"
+                                    : historyRow.description}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </Box>
                   </Collapse>
                 </TableCell>
               </TableRow>
@@ -159,4 +137,4 @@ const ETMtable = (props: any) => {
   );
 };
 
-export default ETMtable;
+export default SAtable;

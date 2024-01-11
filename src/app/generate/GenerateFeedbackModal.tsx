@@ -29,6 +29,7 @@ import NoDataFound from "@/components/resuseables/NoDataFound";
 import {
   ETM,
   MTE,
+  SA,
   addFeedbackFormCode,
   updateFeedbackFormCode,
 } from "@/constants/constant";
@@ -39,6 +40,9 @@ import {
   useGetAllUsersQuery,
   useUpdateFeedbackFormMutation,
 } from "@/redux/api/api";
+import InputField from "@/components/resuseables/InputField";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 
 interface GenerateFeedbackInterface {
   feedbackFormModal: boolean;
@@ -57,7 +61,11 @@ const MenuProps = {
   },
 };
 
-const feedbackTypes = ["Employees to Manager", "Manager to Employees"];
+const feedbackTypes = [
+  "Employees to Manager",
+  "Manager to Employees",
+  "Self Assessment",
+];
 
 const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const { onClose, feedbackFormModal, feedbackFormDetail } = props;
@@ -70,6 +78,9 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     (feedbackFormDetail?.reviewer?.length && feedbackFormDetail?.reviewer) || []
   );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [feedbackName, setFeedbackName] = useState(
+    feedbackFormDetail?.feedbackName || ""
+  );
   const [feedbackParametersArr, setFeedbackParametersArr] = useState(
     (feedbackFormDetail?.feedback_parameters?.length &&
       feedbackFormDetail?.feedback_parameters) ||
@@ -221,8 +232,14 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     const allUsersArr = [...new Set([...teamsArr, ...usersArr])];
 
     const feedbackFormData = {
+      feedbackName: feedbackName,
       feedback_type: feedbackFormType,
-      review: feedbackFormType === ETM ? [reviewType] : flattenedIdsArray,
+      review:
+        feedbackFormType === SA
+          ? undefined
+          : feedbackFormType === ETM
+          ? [reviewType]
+          : flattenedIdsArray,
       reviewer: allUsersArr,
       feedback_parameters: feedParameters,
       reviewerEmails: filteredEmails.toString(),
@@ -312,7 +329,27 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
           <Box display="flex" flexDirection="column" gap="20px" padding="20px">
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
-                Select feedback for
+                Feedback Name
+              </InputLabel>
+              <InputField
+                type="text"
+                id="feedbackName"
+                value={feedbackName}
+                onChange={(e: any) => setFeedbackName(e.target.value)}
+                name="feedbackName" //name is essentially required
+                placeholder="Feedback form name"
+              />
+              {validate && !feedbackName && (
+                <Typography
+                  sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                >
+                  Please provide feedback form name
+                </Typography>
+              )}
+            </Box>
+            <Box>
+              <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
+                Select feedback type
               </InputLabel>
               <Select
                 sx={{ width: "100%", color: "var(--iconGrey)" }}
@@ -321,7 +358,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 input={<OutlinedInput />}
                 renderValue={(selected) => {
                   if (selected.length === 0) {
-                    return <>Select feedback for</>;
+                    return <>Select feedback type</>;
                   }
 
                   return selected;
@@ -339,163 +376,167 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                 <Typography
                   sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
                 >
-                  Please select feedback for
+                  Please select feedback type
                 </Typography>
               )}
             </Box>
-            <Box>
-              <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
-                Review(Shashank)
-              </InputLabel>
-              <Select
-                disabled={!feedbackFormType}
-                sx={{ width: "100%", color: "var(--iconGrey)" }}
-                value={
-                  feedbackFormType === MTE ? multipleReviewType : reviewType
-                }
-                onClose={() => setSearchReviewText("")}
-                onOpen={() => setSearchReviewText("")}
-                displayEmpty
-                multiple={feedbackFormType === MTE ? true : false}
-                input={<OutlinedInput />}
-                renderValue={(selected: any) => {
-                  if (selected.length === 0 || selected === undefined) {
-                    return <>Review</>;
+            {feedbackFormType !== SA && (
+              <Box>
+                <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
+                  Review(Shashank)
+                </InputLabel>
+                <Select
+                  disabled={!feedbackFormType}
+                  sx={{ width: "100%", color: "var(--iconGrey)" }}
+                  value={
+                    feedbackFormType === MTE ? multipleReviewType : reviewType
                   }
-                  if (feedbackFormType === MTE) {
-                    const teamNames = selected?.map((it: any) => it.teamName);
-                    const usersNames = selected?.map(
-                      (it: any) => it.firstName + " " + it.lastName
-                    );
-                    const finalArr = teamNames.concat(usersNames);
-                    const filteredArr = finalArr.filter(
-                      (it: any) => it !== "undefined undefined"
-                    );
-                    const filtered = filteredArr.filter(
-                      (it: string) => it !== undefined
-                    );
+                  onClose={() => setSearchReviewText("")}
+                  onOpen={() => setSearchReviewText("")}
+                  displayEmpty
+                  multiple={feedbackFormType === MTE ? true : false}
+                  input={<OutlinedInput />}
+                  renderValue={(selected: any) => {
+                    if (selected.length === 0 || selected === undefined) {
+                      return <>Review</>;
+                    }
+                    if (feedbackFormType === MTE) {
+                      const teamNames = selected?.map((it: any) => it.teamName);
+                      const usersNames = selected?.map(
+                        (it: any) => it.firstName + " " + it.lastName
+                      );
+                      const finalArr = teamNames.concat(usersNames);
+                      const filteredArr = finalArr.filter(
+                        (it: any) => it !== "undefined undefined"
+                      );
+                      const filtered = filteredArr.filter(
+                        (it: string) => it !== undefined
+                      );
 
-                    return filtered.join(", ");
-                  } else {
-                    return (
-                      selected.firstName +
-                      " " +
-                      selected.lastName +
-                      " " +
-                      "(" +
-                      selected.designation +
-                      ")"
-                    );
-                  }
-                }}
-                MenuProps={{
-                  autoFocus: false,
-                  ...MenuProps,
-                }}
-              >
-                <ListSubheader sx={{ width: "100%", padding: "0" }}>
-                  <MenuItem
-                    sx={searchFieldMenuItem}
-                    onClick={(e: any) => e.stopPropagation()}
-                  >
-                    <SearchField
-                      setSearchText={setSearchReviewText}
-                      searchText={searchReviewText}
-                      placeholder="Search"
-                      onKeyDown={(e: React.KeyboardEvent) => handleOnKeyDown(e)}
-                    />
-                  </MenuItem>
-                </ListSubheader>
-                {feedbackFormType === ETM &&
-                  (usersData?.data?.length ? (
-                    usersData?.data?.map((it: any) => (
-                      <MenuItem
-                        onClick={() => handleReviewChange(it)}
-                        key={it._id}
-                        value={it}
-                      >
-                        {it.firstName +
-                          " " +
-                          it.lastName +
-                          " " +
-                          "(" +
-                          it.designation +
-                          ")"}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <NoDataFound height="auto" text="No data Found" />
-                  ))}
-
-                {feedbackFormType === MTE && (
-                  <>
-                    <ListSubheader>Team Names</ListSubheader>
-                    {rolesData?.data?.length ? (
-                      rolesData?.data?.map((it: any) => {
-                        return (
-                          <MenuItem
-                            key={it._id}
-                            value={it}
-                            onClick={() => handleMultiReviewChange(it)}
-                          >
-                            <Checkbox
-                              defaultChecked={reviewTeamIds?.includes(it._id)}
-                              checked={reviewTeamIds?.includes(it._id)}
-                            />
-                            <ListItemText primary={it.teamName} />
-                          </MenuItem>
-                        );
-                      })
+                      return filtered.join(", ");
+                    } else {
+                      return (
+                        selected.firstName +
+                        " " +
+                        selected.lastName +
+                        " " +
+                        "(" +
+                        selected.designation +
+                        ")"
+                      );
+                    }
+                  }}
+                  MenuProps={{
+                    autoFocus: false,
+                    ...MenuProps,
+                  }}
+                >
+                  <ListSubheader sx={{ width: "100%", padding: "0" }}>
+                    <MenuItem
+                      sx={searchFieldMenuItem}
+                      onClick={(e: any) => e.stopPropagation()}
+                    >
+                      <SearchField
+                        setSearchText={setSearchReviewText}
+                        searchText={searchReviewText}
+                        placeholder="Search"
+                        onKeyDown={(e: React.KeyboardEvent) =>
+                          handleOnKeyDown(e)
+                        }
+                      />
+                    </MenuItem>
+                  </ListSubheader>
+                  {feedbackFormType === ETM &&
+                    (usersData?.data?.length ? (
+                      usersData?.data?.map((it: any) => (
+                        <MenuItem
+                          onClick={() => handleReviewChange(it)}
+                          key={it._id}
+                          value={it}
+                        >
+                          {it.firstName +
+                            " " +
+                            it.lastName +
+                            " " +
+                            "(" +
+                            it.designation +
+                            ")"}
+                        </MenuItem>
+                      ))
                     ) : (
                       <NoDataFound height="auto" text="No data Found" />
-                    )}
-                    <ListSubheader>Employees</ListSubheader>
-                    {usersData?.data?.length ? (
-                      usersData?.data?.map((it: any) => {
-                        return (
-                          <MenuItem
-                            key={it._id}
-                            value={it}
-                            onClick={() => handleMultiReviewChange(it)}
-                          >
-                            <Checkbox
-                              defaultChecked={reviewTeamIds?.includes(it._id)}
-                              checked={reviewTeamIds?.includes(it._id)}
-                            />
-                            <ListItemText
-                              primary={
-                                it.firstName +
-                                " " +
-                                it.lastName +
-                                " " +
-                                "(" +
-                                it.designation +
-                                ")"
-                              }
-                            />
-                          </MenuItem>
-                        );
-                      })
-                    ) : (
-                      <NoDataFound height="auto" text="No data Found" />
-                    )}
-                  </>
-                )}
-              </Select>
-              {validate &&
-                (feedbackFormType === MTE
-                  ? !multipleReviewType?.length
-                  : !reviewType) && (
-                  <Typography
-                    sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
-                  >
-                    Please select a person to review
-                  </Typography>
-                )}
-            </Box>
+                    ))}
+
+                  {feedbackFormType === MTE && (
+                    <>
+                      <ListSubheader>Team Names</ListSubheader>
+                      {rolesData?.data?.length ? (
+                        rolesData?.data?.map((it: any) => {
+                          return (
+                            <MenuItem
+                              key={it._id}
+                              value={it}
+                              onClick={() => handleMultiReviewChange(it)}
+                            >
+                              <Checkbox
+                                defaultChecked={reviewTeamIds?.includes(it._id)}
+                                checked={reviewTeamIds?.includes(it._id)}
+                              />
+                              <ListItemText primary={it.teamName} />
+                            </MenuItem>
+                          );
+                        })
+                      ) : (
+                        <NoDataFound height="auto" text="No data Found" />
+                      )}
+                      <ListSubheader>Employees</ListSubheader>
+                      {usersData?.data?.length ? (
+                        usersData?.data?.map((it: any) => {
+                          return (
+                            <MenuItem
+                              key={it._id}
+                              value={it}
+                              onClick={() => handleMultiReviewChange(it)}
+                            >
+                              <Checkbox
+                                defaultChecked={reviewTeamIds?.includes(it._id)}
+                                checked={reviewTeamIds?.includes(it._id)}
+                              />
+                              <ListItemText
+                                primary={
+                                  it.firstName +
+                                  " " +
+                                  it.lastName +
+                                  " " +
+                                  "(" +
+                                  it.designation +
+                                  ")"
+                                }
+                              />
+                            </MenuItem>
+                          );
+                        })
+                      ) : (
+                        <NoDataFound height="auto" text="No data Found" />
+                      )}
+                    </>
+                  )}
+                </Select>
+                {validate &&
+                  (feedbackFormType === MTE
+                    ? !multipleReviewType?.length
+                    : !reviewType) && (
+                    <Typography
+                      sx={{ fontSize: "12px", color: "red", marginTop: "5px" }}
+                    >
+                      Please select a person to review
+                    </Typography>
+                  )}
+              </Box>
+            )}
             <Box>
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
-                Reviewer(web-team)
+                Reviewer
               </InputLabel>
               <Select
                 disabled={
@@ -552,30 +593,34 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     />
                   </MenuItem>
                 </ListSubheader>
-                <ListSubheader>Team Names</ListSubheader>
-                {rolesData?.data?.length ? (
-                  rolesData?.data?.map((it: any) => {
-                    return (
-                      <MenuItem
-                        key={it._id}
-                        value={it}
-                        disabled={
-                          multipleReviewType
-                            ?.map((item: any) => item?._id)
-                            .includes(it._id) || reviewType?._id === it._id
-                        }
-                        onClick={() => handleReviewerChange(it)}
-                      >
-                        <Checkbox
-                          defaultChecked={teamIds?.includes(it._id)}
-                          checked={teamIds?.includes(it._id)}
-                        />
-                        <ListItemText primary={it.teamName} />
-                      </MenuItem>
-                    );
-                  })
-                ) : (
-                  <NoDataFound height="auto" text="No data Found" />
+                {feedbackFormType === ETM && (
+                  <>
+                    <ListSubheader>Team Names</ListSubheader>
+                    {rolesData?.data?.length ? (
+                      rolesData?.data?.map((it: any) => {
+                        return (
+                          <MenuItem
+                            key={it._id}
+                            value={it}
+                            disabled={
+                              multipleReviewType
+                                ?.map((item: any) => item?._id)
+                                .includes(it._id) || reviewType?._id === it._id
+                            }
+                            onClick={() => handleReviewerChange(it)}
+                          >
+                            <Checkbox
+                              defaultChecked={teamIds?.includes(it._id)}
+                              checked={teamIds?.includes(it._id)}
+                            />
+                            <ListItemText primary={it.teamName} />
+                          </MenuItem>
+                        );
+                      })
+                    ) : (
+                      <NoDataFound height="auto" text="No data Found" />
+                    )}
+                  </>
                 )}
                 <ListSubheader>Employees</ListSubheader>
                 {usersData?.data.length ? (

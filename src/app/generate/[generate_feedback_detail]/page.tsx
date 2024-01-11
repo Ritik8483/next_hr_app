@@ -8,12 +8,14 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Breadcrumbs } from "@mui/material";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { ETM, MTE } from "@/constants/constant";
+import { ETM, MTE, SA } from "@/constants/constant";
 import MTEtable from "./MTEtable";
 import ETMtable from "./ETMtable";
 import html2PDF from "jspdf-html2canvas";
 import { DownloadTableExcel } from "react-export-table-to-excel";
 import { useGetSingleFeedbackFormDetailQuery } from "@/redux/api/api";
+import Buttons from "@/components/resuseables/Buttons";
+import SAtable from "./SAtable";
 
 const GenerateFeedbackDetail = () => {
   const router: any = useRouter();
@@ -57,14 +59,16 @@ const GenerateFeedbackDetail = () => {
       Generate
     </Typography>,
     <Typography sx={{ cursor: "pointer" }} color="var(--primaryThemeBlue)">
-      {reviewrs?.length > 2
+      {data?.data?.feedback_type === SA
+        ? SA
+        : reviewrs?.length > 2
         ? reviewrs?.splice(0, 2).toString() + "..."
         : reviewrs?.toString()}
     </Typography>,
   ];
 
-  const downloadPrintPDF = async () => {
-    await html2PDF(tableRef.current, {
+  const downloadFunc = async () => {
+    const resp = await html2PDF(tableRef.current, {
       jsPDF: {
         format: "a4",
       },
@@ -79,9 +83,16 @@ const GenerateFeedbackDetail = () => {
       margin: { top: 15, right: 10, bottom: 20, left: 10 },
       output: `ql.pdf`,
     });
-    setOpenAllCollapses(false);
-    // domElement.style.display = 'none';
-    // setLoad(false);
+    if (resp?.AcroForm) {
+      setOpenAllCollapses(false);
+    }
+  };
+
+  const downloadPrintPDF = async () => {
+    setOpenAllCollapses(true);
+    setTimeout(() => {
+      downloadFunc();
+    }, 500);
   };
 
   return (
@@ -99,13 +110,13 @@ const GenerateFeedbackDetail = () => {
         currentTableRef={tableRef.current}
       >
         <button> Export excel </button>
-      </DownloadTableExcel>
+      </DownloadTableExcel> */}
 
       <Buttons
         text="download PDF"
-        onMouseOver={() => setOpenAllCollapses(true)}
+        onClickCapture={() => setOpenAllCollapses(true)}
         onClick={downloadPrintPDF}
-      /> */}
+      />
       <Box ref={tableRef}>
         {isLoading ? (
           <SkeletonTable
@@ -114,8 +125,7 @@ const GenerateFeedbackDetail = () => {
             sx={{ marginTop: "20px" }}
             height="calc(100vh - 180px)"
           />
-        ) : data?.data?.feedback_type === MTE &&
-          !data?.data?.responses?.length ? (
+        ) : !data?.data?.responses?.length ? (
           <NoDataFound text="No data Found" />
         ) : data?.data?.feedback_type === MTE &&
           data?.data?.responses?.length ? (
@@ -129,12 +139,20 @@ const GenerateFeedbackDetail = () => {
             />
           </>
         ) : data?.data?.feedback_type === ETM &&
-          !data?.data?.responses?.length ? (
-          <NoDataFound text="No data Found" />
-        ) : data?.data?.feedback_type === ETM &&
           data?.data?.responses?.length ? (
           <>
             <ETMtable
+              feedbackResponseList={data?.data}
+              handleOpenTable={handleOpenTable}
+              open={open}
+              openId={openId}
+              openAllCollapses={openAllCollapses}
+            />
+          </>
+        ) : data?.data?.feedback_type === SA &&
+          data?.data?.responses?.length ? (
+          <>
+            <SAtable
               feedbackResponseList={data?.data}
               handleOpenTable={handleOpenTable}
               open={open}

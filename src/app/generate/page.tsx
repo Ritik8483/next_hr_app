@@ -25,7 +25,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import AlertBox from "@/components/resuseables/AlertBox";
-import { deleteFeedbackFormCode, limit } from "@/constants/constant";
+import { MTE, deleteFeedbackFormCode, limit } from "@/constants/constant";
 import {
   useDeleteFeedbackFormMutation,
   useGetAllGenerateFeedbackFormQuery,
@@ -34,9 +34,9 @@ import {
 
 const tableHeadings = [
   "S.No.",
+  "Feedback Name",
   "Feedback Type",
-  "Person to review",
-  "Reviewers",
+  "Created At",
   "Actions",
 ];
 
@@ -91,8 +91,7 @@ const GenerateFeedback = () => {
           },
         };
         const resp = await sendEmail(payload).unwrap();
-
-        if (index + 1 === item.reviewer.length && resp?.code === 5000) {
+        if (index === 0 && resp?.code === 5000) {
           dispatch(
             openAlert({
               type: "success",
@@ -158,11 +157,11 @@ const GenerateFeedback = () => {
         alignItems="center"
         marginBottom="24px"
       >
-        {/* <SearchField
+        <SearchField
           setSearchText={setSearchText}
           searchText={searchText}
           placeholder="Search feedback by name"
-        /> */}
+        />
         <Box></Box>
         <Buttons
           text="Create Form"
@@ -203,6 +202,7 @@ const GenerateFeedback = () => {
               </TableHead>
               <TableBody>
                 {data?.data?.map((item: any, index: number) => {
+                  const date: any = String(new Date(item.date)).split("GMT")[0];
                   return (
                     <StyledTableRow
                       onClick={() => handleRowClick(item)}
@@ -214,9 +214,15 @@ const GenerateFeedback = () => {
                           : limit * currentPage + 1 - limit + index}
                       </StyledTableCell>
                       <StyledTableCell align="center">
-                        {item.feedback_type}
+                        {item.feedbackName}
                       </StyledTableCell>
                       <StyledTableCell align="center">
+                        {item.feedback_type}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">{date}</StyledTableCell>
+
+                      {/* <StyledTableCell align="center">{date}</StyledTableCell> */}
+                      {/* <StyledTableCell align="center">
                         {item?.review?.length > 3
                           ? item.review
                               ?.slice(0, 3)
@@ -270,7 +276,7 @@ const GenerateFeedback = () => {
                             />
                           )}
                         </Box>
-                      </StyledTableCell>
+                      </StyledTableCell> */}
                       <StyledTableCell align="right">
                         <Box
                           display="flex"
