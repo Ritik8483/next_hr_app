@@ -313,8 +313,6 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     }
   };
 
-  console.log("anonymous", anonymous);
-
   return (
     <Modal
       open={feedbackFormModal}

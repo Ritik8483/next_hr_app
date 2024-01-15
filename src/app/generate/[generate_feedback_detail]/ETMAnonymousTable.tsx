@@ -17,10 +17,10 @@ const tableHeadings = [
 ];
 
 const ETMAnonymousTable = (props: any) => {
-  const { feedbackResponseList } = props;
+  const { feedbackResponseList ,tableRef} = props;  
 
   return (
-    <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
+    <TableContainer ref={tableRef} sx={{ marginTop: "20px" }} component={Paper}>
       <Table aria-label="collapsible table">
         <TableHead>
           <TableRow>
@@ -36,7 +36,7 @@ const ETMAnonymousTable = (props: any) => {
         </TableHead>
         <TableBody>
           {feedbackResponseList?.responses?.map((row: any, index: number) => (
-            <TableRow key={row._id}>
+            <TableRow key={row._id + index}>
               <TableCell align="left" component="th" scope="row">
                 {index + 1}
               </TableCell>

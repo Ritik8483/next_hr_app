@@ -3,7 +3,12 @@ export interface IFormInput {
   password: string;
 }
 
-
 export interface UserLoginPageInterface {
   settogglePage: (text: string) => string | any;
+}
+
+export interface BreadCrumbInterface {
+  onClick: any;
+  textFirst: string;
+  textSecond: string;
 }

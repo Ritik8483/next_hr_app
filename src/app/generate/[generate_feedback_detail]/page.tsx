@@ -5,18 +5,15 @@ import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import { useParams, useRouter } from "next/navigation";
 import React, { useRef, useState } from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import { Breadcrumbs } from "@mui/material";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import { ETM, MTE, SA } from "@/constants/constant";
 import MTEtable from "./MTEtable";
 import ETMtable from "./ETMtable";
 import html2PDF from "jspdf-html2canvas";
-import { DownloadTableExcel } from "react-export-table-to-excel";
 import { useGetSingleFeedbackFormDetailQuery } from "@/redux/api/api";
 import Buttons from "@/components/resuseables/Buttons";
 import SAtable from "./SAtable";
 import ETMAnonymousTable from "./ETMAnonymousTable";
+import Breadcrumb from "@/components/resuseables/Breadcrumb";
 
 const GenerateFeedbackDetail = () => {
   const router: any = useRouter();
@@ -50,40 +47,24 @@ const GenerateFeedbackDetail = () => {
     (it: any) => it.firstName + " " + it.lastName
   );
 
-  const breadcrumbs = [
-    <Typography
-      sx={{ cursor: "pointer" }}
-      onClick={handleGenerte}
-      key="3"
-      color="var(--primaryThemeBlue)"
-    >
-      Generate
-    </Typography>,
-    <Typography sx={{ cursor: "pointer" }} color="var(--primaryThemeBlue)">
-      {data?.data?.feedback_type === SA
-        ? SA
-        : reviewrs?.length > 2
-        ? reviewrs?.splice(0, 2).toString() + "..."
-        : reviewrs?.toString()}
-    </Typography>,
-  ];
-
   const downloadFunc = async () => {
-    const resp = await html2PDF(tableRef.current, {
-      jsPDF: {
-        format: "a4",
-      },
-      html2canvas: {
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        imageTimeout: 15000,
-        logging: true,
-        useCORS: true,
-      },
-      imageType: "image/jpeg",
-      margin: { top: 15, right: 10, bottom: 20, left: 10 },
-      output: `ql.pdf`,
-    });
+    const resp =
+      tableRef.current &&
+      (await html2PDF(tableRef.current, {
+        jsPDF: {
+          format: "a4",
+        },
+        html2canvas: {
+          scrollX: 0,
+          scrollY: -window.scrollY,
+          imageTimeout: 15000,
+          logging: true,
+          useCORS: true,
+        },
+        imageType: "image/jpeg",
+        margin: { top: 15, right: 10, bottom: 20, left: 10 },
+        output: `ql.pdf`,
+      }));
     if (resp?.AcroForm) {
       setOpenAllCollapses(false);
     }
@@ -92,34 +73,34 @@ const GenerateFeedbackDetail = () => {
   const downloadPrintPDF = async () => {
     setOpenAllCollapses(true);
     setTimeout(() => {
+      setOpenAllCollapses(false);
       downloadFunc();
     }, 500);
   };
 
   return (
     <>
-      <Breadcrumbs
-        separator={<NavigateNextIcon fontSize="small" />}
-        aria-label="breadcrumb"
-      >
-        {breadcrumbs}
-      </Breadcrumbs>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Breadcrumb
+          onClick={handleGenerte}
+          textFirst="Generate"
+          textSecond={
+            data?.data?.feedback_type === SA
+              ? SA
+              : reviewrs?.length > 2
+              ? reviewrs?.splice(0, 2).toString() + "..."
+              : reviewrs?.toString()
+          }
+        />
 
-      {/* <DownloadTableExcel
-        filename="users table"
-        sheet="users"
-        currentTableRef={tableRef.current}
-      >
-        <button> Export excel </button>
-      </DownloadTableExcel> */}
-
-      <Buttons
-        text="download PDF"
-        onClickCapture={() => setOpenAllCollapses(true)}
-        onClick={downloadPrintPDF}
-      />
-      <Box ref={tableRef}>
-        {isLoading ? (
+        <Buttons
+          disabled={!data?.data?.responses?.length}
+          text="Download PDF"
+          onClick={downloadPrintPDF}
+        />
+      </Box>
+      <Box>
+        {isLoading || openAllCollapses ? (
           <SkeletonTable
             variant="rounded"
             width="100%"
@@ -130,45 +111,75 @@ const GenerateFeedbackDetail = () => {
           <NoDataFound text="No data Found" />
         ) : data?.data?.feedback_type === MTE &&
           data?.data?.responses?.length ? (
-          <>
-            <MTEtable
-              feedbackResponseList={data?.data}
-              handleOpenTable={handleOpenTable}
-              open={open}
-              openId={openId}
-              openAllCollapses={openAllCollapses}
-            />
-          </>
+          <MTEtable
+            feedbackResponseList={data?.data}
+            handleOpenTable={handleOpenTable}
+            open={open}
+            openId={openId}
+          />
         ) : data?.data?.feedback_type === ETM &&
           data?.data?.responses?.length &&
           data?.data?.anonymous ? (
           <ETMAnonymousTable feedbackResponseList={data?.data} />
         ) : data?.data?.feedback_type === ETM &&
           data?.data?.responses?.length ? (
-          <>
-            <ETMtable
-              feedbackResponseList={data?.data}
-              handleOpenTable={handleOpenTable}
-              open={open}
-              openId={openId}
-              openAllCollapses={openAllCollapses}
-            />
-          </>
+          <ETMtable
+            feedbackResponseList={data?.data}
+            handleOpenTable={handleOpenTable}
+            open={open}
+            openId={openId}
+          />
         ) : data?.data?.feedback_type === SA &&
           data?.data?.responses?.length ? (
-          <>
-            <SAtable
-              feedbackResponseList={data?.data}
-              handleOpenTable={handleOpenTable}
-              open={open}
-              openId={openId}
-              openAllCollapses={openAllCollapses}
-            />
-          </>
+          <SAtable
+            feedbackResponseList={data?.data}
+            handleOpenTable={handleOpenTable}
+            open={open}
+            openId={openId}
+          />
         ) : (
           <NoDataFound text="No responses yet!" />
         )}
       </Box>
+
+      {openAllCollapses &&
+        (data?.data?.feedback_type === ETM &&
+        data?.data?.responses?.length &&
+        data?.data?.anonymous ? (
+          <ETMAnonymousTable
+            tableRef={tableRef}
+            feedbackResponseList={data?.data}
+          />
+        ) : data?.data?.feedback_type === ETM &&
+          data?.data?.responses?.length ? (
+          <ETMtable
+            tableRef={tableRef}
+            feedbackResponseList={data?.data}
+            handleOpenTable={handleOpenTable}
+            open={open}
+            openId={openId}
+            openAllCollapses={openAllCollapses}
+          />
+        ) : data?.data?.feedback_type === SA &&
+          data?.data?.responses?.length ? (
+          <SAtable
+            tableRef={tableRef}
+            feedbackResponseList={data?.data}
+            handleOpenTable={handleOpenTable}
+            open={open}
+            openId={openId}
+            openAllCollapses={openAllCollapses}
+          />
+        ) : (
+          <MTEtable
+            tableRef={tableRef}
+            feedbackResponseList={data?.data}
+            handleOpenTable={handleOpenTable}
+            open={open}
+            openId={openId}
+            openAllCollapses={openAllCollapses}
+          />
+        ))}
     </>
   );
 };

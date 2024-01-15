@@ -36,118 +36,150 @@ const SAtable = (props: any) => {
     feedbackResponseList,
     handleOpenTable,
     open,
+    tableRef,
     openId,
     openAllCollapses,
   } = props;
 
+  const peopleReviewed = feedbackResponseList?.responses?.map(
+    (item: any) => item.firstName + " " + item.lastName
+  );
+
+  const responsesId = feedbackResponseList?.responses?.map(
+    (item: any) => item._id
+  );
+
+  const personLeft = feedbackResponseList?.reviewer
+    ?.filter((it: any) => !responsesId.includes(it._id))
+    .map((item: any) => item.firstName + " " + item.lastName);
+
   return (
-    <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
-      <Table aria-label="collapsible table">
-        <TableHead>
-          <TableRow>
-            <TableCell />
-            {tableHeadings.map((item: string) => (
-              <TableCell
-                align={item === "S.No." ? "left" : "center"}
-                key={item}
-              >
-                {item}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {feedbackResponseList?.responses?.map((row: any, index: number) => (
-            <>
-              <TableRow
-                key={row._id}
-                sx={{ "& > *": { borderBottom: "unset" } }}
-              >
-                <TableCell>
-                  <IconButton
-                    aria-label="expand row"
-                    size="small"
-                    onClick={() => handleOpenTable(row._id)}
-                  >
-                    {openId === row._id && open ? (
-                      <KeyboardArrowUpIcon />
-                    ) : (
-                      <KeyboardArrowDownIcon />
-                    )}
-                  </IconButton>
-                </TableCell>
-                <TableCell component="th" scope="row">
-                  {index + 1}
-                </TableCell>
-                <TableCell align="center">{row.firstName}</TableCell>
-                <TableCell align="center">{row.lastName}</TableCell>
-                <TableCell align="center">{row.email}</TableCell>
-                <TableCell align="center">{row.designation}</TableCell>
-              </TableRow>
-              <TableRow>
+    <>
+      <Box marginTop="50px">
+        <Typography>
+          Person assessed :{" "}
+          {peopleReviewed?.length ? peopleReviewed.toString() : 0}
+        </Typography>
+        <Typography>
+          Person left : {personLeft?.length ? personLeft.toString() : 0}
+        </Typography>
+      </Box>
+      <TableContainer
+        ref={tableRef}
+        sx={{ marginTop: "20px" }}
+        component={Paper}
+      >
+        <Table aria-label="collapsible table">
+          <TableHead>
+            <TableRow>
+              <TableCell />
+              {tableHeadings.map((item: string) => (
                 <TableCell
-                  style={{ paddingBottom: 0, paddingTop: 0 }}
-                  colSpan={6}
+                  align={item === "S.No." ? "left" : "center"}
+                  key={item}
                 >
-                  <Collapse
-                    in={openAllCollapses || (openId === row._id && open)}
-                    timeout="auto"
-                    unmountOnExit
-                  >
-                    <Box sx={{ margin: 1 }}>
-                      <Table size="small" aria-label="purchases">
-                        <TableHead>
-                          <TableRow>
-                            {tableSubHeadings.map((item: string) => (
-                              <TableCell
-                                align={item === "S.No." ? "left" : "center"}
-                                key={item}
-                              >
-                                {item}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {row?.form_response?.map(
-                            (historyRow: any, index: number) => (
-                              <TableRow key={historyRow._id}>
-                                <TableCell component="th" scope="row">
-                                  {index + 1}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {historyRow.feedbackName}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {!historyRow.input ? "__" : historyRow.input}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {!historyRow.score ? "__" : historyRow.score}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {!historyRow.description
-                                    ? "__"
-                                    : historyRow.description}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {!historyRow.option
-                                    ? "__"
-                                    : historyRow.option}
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
-                        </TableBody>
-                      </Table>
-                    </Box>
-                  </Collapse>
+                  {item}
                 </TableCell>
-              </TableRow>
-            </>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {feedbackResponseList?.responses?.map((row: any, index: number) => (
+              <>
+                <TableRow
+                  key={row._id}
+                  sx={{ "& > *": { borderBottom: "unset" } }}
+                >
+                  <TableCell>
+                    <IconButton
+                      aria-label="expand row"
+                      size="small"
+                      onClick={() => handleOpenTable(row._id)}
+                    >
+                      {openId === row._id && open ? (
+                        <KeyboardArrowUpIcon />
+                      ) : (
+                        <KeyboardArrowDownIcon />
+                      )}
+                    </IconButton>
+                  </TableCell>
+                  <TableCell component="th" scope="row">
+                    {index + 1}
+                  </TableCell>
+                  <TableCell align="center">{row.firstName}</TableCell>
+                  <TableCell align="center">{row.lastName}</TableCell>
+                  <TableCell align="center">{row.email}</TableCell>
+                  <TableCell align="center">{row.designation}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    style={{ paddingBottom: 0, paddingTop: 0 }}
+                    colSpan={6}
+                  >
+                    <Collapse
+                      in={openAllCollapses || (openId === row._id && open)}
+                      timeout="auto"
+                      unmountOnExit
+                    >
+                      <Box sx={{ margin: 1 }}>
+                        <Table size="small" aria-label="purchases">
+                          <TableHead>
+                            <TableRow>
+                              {tableSubHeadings.map((item: string) => (
+                                <TableCell
+                                  align={item === "S.No." ? "left" : "center"}
+                                  key={item}
+                                >
+                                  {item}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {row?.form_response?.map(
+                              (historyRow: any, index: number) => (
+                                <TableRow key={historyRow._id}>
+                                  <TableCell component="th" scope="row">
+                                    {index + 1}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    {historyRow.feedbackName}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    {!historyRow.input
+                                      ? "__"
+                                      : historyRow.input}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    {!historyRow.score
+                                      ? "__"
+                                      : historyRow.score}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    {!historyRow.description
+                                      ? "__"
+                                      : historyRow.description}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    {!historyRow.option
+                                      ? "__"
+                                      : historyRow.option}
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            )}
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    </Collapse>
+                  </TableCell>
+                </TableRow>
+              </>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
   );
 };
 

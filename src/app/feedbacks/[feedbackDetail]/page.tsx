@@ -1,11 +1,20 @@
-import React from 'react'
+"use client";
+
+import Breadcrumb from "@/components/resuseables/Breadcrumb";
+import { useRouter } from "next/navigation";
+import React from "react";
 
 const FeedbackDetail = () => {
+  const router = useRouter();
   return (
-    <div>
-      FeedbackDetail
-    </div>
-  )
-}
+    <>
+      <Breadcrumb
+        onClick={() => router.push("/feedbacks")}
+        textFirst="Feedbacks"
+        textSecond="FeedbackDetail"
+      />
+    </>
+  );
+};
 
-export default FeedbackDetail
+export default FeedbackDetail;

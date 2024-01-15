@@ -1,0 +1,39 @@
+.mainformContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 60px 90px;
+  background-color: var(--userformBg);
+  border-radius: 5px;
+  align-items: center;
+  @media (max-width: 500px) {
+    padding: 0;
+  }
+}
+.formToFillupContainer {
+  background-color: var(--userInsideFormBg);
+  padding: 20px 50px;
+  width: 100%;
+  @media (max-width: 500px) {
+    padding: 20px;
+  }
+}
+.enpsTextStyle {
+  padding: 20px 50px;
+  width: 100%;
+  background-color: var(--enpsText);
+  @media (max-width: 500px) {
+    padding: 20px;
+  }
+}
+.formSubmissionStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 50px;
+  width: 100%;
+  background-color: var(--thanksBg);
+  @media (max-width: 500px) {
+    padding: 20px;
+  }
+}

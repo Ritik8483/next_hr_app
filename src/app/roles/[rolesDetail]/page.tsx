@@ -1,10 +1,19 @@
+"use client";
+
+import Breadcrumb from '@/components/resuseables/Breadcrumb'
+import { useRouter } from 'next/navigation';
 import React from 'react'
 
 const RoleDetail = () => {
+  const router = useRouter();
   return (
-    <div>
-      RoleDetail
-    </div>
+    <>
+      <Breadcrumb
+        onClick={() => router.push("/roles")}
+        textFirst="Roles"
+        textSecond="RoleDetail"
+      />
+    </>
   )
 }
 

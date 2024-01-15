@@ -4,11 +4,10 @@ import Buttons from "@/components/resuseables/Buttons";
 import InputField from "@/components/resuseables/InputField";
 import NoDataFound from "@/components/resuseables/NoDataFound";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
+import styles from "../page.module.css";
 import {
   Box,
-  FormControl,
   FormControlLabel,
-  FormLabel,
   InputLabel,
   MenuItem,
   OutlinedInput,
@@ -17,7 +16,8 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { useParams, usePathname, useSearchParams } from "next/navigation";
+
+import { useSearchParams } from "next/navigation";
 import CheckIcon from "@mui/icons-material/Check";
 import React, { Fragment, useEffect, useState } from "react";
 import Slider from "@mui/material/Slider";
@@ -434,28 +434,18 @@ const FillFeedbackForm = () => {
   return (
     <>
       <Box
-        minHeight="100vh"
-        display="flex"
         justifyContent={activePage ? "start" : "center"}
-        flexDirection="column"
-        padding="60px 90px"
-        bgcolor="var(--userformBg)"
-        borderRadius="5px"
-        alignItems="center"
+        className={styles.mainformContainer}
       >
         {!activePage ? (
           <>
-            <Box padding="20px 50px" width="100%" bgcolor="#0037ad">
+            <Box className={styles.enpsTextStyle}>
               <Typography fontSize="24px" color="#fff">
                 Your Matter(eNPS)
               </Typography>
             </Box>
             <form
-              style={{
-                backgroundColor: "#d7e2ee",
-                padding: "20px 50px",
-                width: "100%",
-              }}
+              className={styles.formToFillupContainer}
               onSubmit={handleSubmit}
             >
               <Typography color="#595c6f" fontSize="14px" marginBottom="30px">
@@ -542,10 +532,7 @@ const FillFeedbackForm = () => {
                         <Box>
                           <Box display="flex">
                             <Typography variant="h6">
-                              {index + 1}. {item.feedbackName}
-                            </Typography>
-                            <Typography variant="h6" color="#595c6f">
-                              *
+                              {index + 1}. {item.feedbackName + "*"}
                             </Typography>
                           </Box>
                           {item.feedbackDescription && (
@@ -792,12 +779,7 @@ const FillFeedbackForm = () => {
         ) : (
           <>
             <Box
-              display="flex"
-              flexDirection="column"
-              gap="20px"
-              padding="20px 50px"
-              width="100%"
-              bgcolor="var(--thanksBg)"
+              className={styles.formSubmissionStyle}
             >
               <Typography fontSize="24px" color="#000">
                 Thank you
