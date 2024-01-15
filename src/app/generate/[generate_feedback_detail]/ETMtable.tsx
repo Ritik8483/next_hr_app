@@ -22,7 +22,14 @@ const tableHeadings = [
   "Designation",
 ];
 
-const tableSubHeadings = ["S.No.", "Feedback Name", "Score", "Description"];
+const tableSubHeadings = [
+  "S.No.",
+  "Feedback Name",
+  "Input",
+  "Score",
+  "Description",
+  "MCQ Option",
+];
 
 const ETMtable = (props: any) => {
   const {
@@ -130,6 +137,9 @@ const ETMtable = (props: any) => {
                                         {historyRow.feedbackName}
                                       </TableCell>
                                       <TableCell align="center">
+                                        {historyRow.input || "_"}
+                                      </TableCell>
+                                      <TableCell align="center">
                                         {historyRow.score === ""
                                           ? "__"
                                           : historyRow.score}
@@ -138,6 +148,11 @@ const ETMtable = (props: any) => {
                                         {historyRow.description === ""
                                           ? "__"
                                           : historyRow.description}
+                                      </TableCell>
+                                      <TableCell align="center">
+                                        {!historyRow.option
+                                          ? "__"
+                                          : historyRow.option}
                                       </TableCell>
                                     </TableRow>
                                   )

@@ -57,9 +57,13 @@ const addRolesSchema = yup
 const addFeedbacksSchema = yup
   .object({
     feedbackName: yup.string().required("Feedback name is required"),
-    feedbackDescription: yup
-      .string()
-      .required("Feedback description is required"),
+    feedbackDescription: yup.string(),
+  })
+  .required();
+
+const addFeedbacksMCQSchema = yup
+  .object({
+    feedbackName: yup.string().required("Feedback name is required"),
   })
   .required();
 
@@ -79,6 +83,7 @@ export {
   addUserSchema,
   addRolesSchema,
   addFeedbacksSchema,
+  addFeedbacksMCQSchema,
   generateFeedbackSchema,
   userForgotPasswordSchema,
 };

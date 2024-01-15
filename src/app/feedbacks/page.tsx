@@ -9,6 +9,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
 } from "@mui/material";
 import SearchField from "@/components/resuseables/SearchField";
 import Buttons from "@/components/resuseables/Buttons";
@@ -150,44 +151,60 @@ const Feedbacks = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.data?.map((item: any, index: number) => (
-                  <StyledTableRow
-                    onClick={() => handleRowClick(item._id)}
-                    key={item._id}
-                  >
-                    <StyledTableCell component="th" scope="row">
-                      {currentPage === 1
-                        ? index + 1
-                        : limit * currentPage + 1 - limit + index}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.feedback_parameter_type}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.feedbackName}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {item.feedbackDescription}
-                    </StyledTableCell>
-                    <StyledTableCell
-                      align="right"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                {data?.data?.map((item: any, index: number) => {
+                  return (
+                    <StyledTableRow
+                      onClick={() => handleRowClick(item._id)}
+                      key={item._id}
                     >
-                      <Box display="flex" gap="15px" justifyContent="flex-end">
-                        <EditIcon
-                          onClick={() => handleEdit(item)}
-                          sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                        />
-                        <DeleteIcon
-                          onClick={() =>
-                            setOpenAlertBox({ data: item, state: true })
-                          }
-                          sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                        />
-                      </Box>
-                    </StyledTableCell>
-                  </StyledTableRow>
-                ))}
+                      <StyledTableCell component="th" scope="row">
+                        {currentPage === 1
+                          ? index + 1
+                          : limit * currentPage + 1 - limit + index}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {item.feedback_parameter_type}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {item.feedbackName}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {item.mcqOption.length
+                          ? item.mcqOption.map((it: string, index: number) => (
+                              <Box key={it}>
+                                <Typography>
+                                  {index + 1}. {it}
+                                </Typography>
+                              </Box>
+                            ))
+                          : item.feedbackDescription === ""
+                          ? "_"
+                          : item.feedbackDescription}
+                      </StyledTableCell>
+                      <StyledTableCell
+                        align="right"
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      >
+                        <Box
+                          display="flex"
+                          gap="15px"
+                          justifyContent="flex-end"
+                        >
+                          <EditIcon
+                            onClick={() => handleEdit(item)}
+                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
+                          />
+                          <DeleteIcon
+                            onClick={() =>
+                              setOpenAlertBox({ data: item, state: true })
+                            }
+                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
+                          />
+                        </Box>
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             <PaginationTable
@@ -215,8 +232,8 @@ const Feedbacks = () => {
           open={openAlertBox.state}
           cancelText="No Cancel"
           confirmText="Yes Delete"
-          mainHeaderText="Are you sure you want to delete"
-          userName={openAlertBox.data.feedbackName}
+          mainHeaderText="Are you sure you want to delete this feedback?"
+          // userName={openAlertBox.data.feedbackName}
           onClose={handleClose}
           handleClick={handleDeleteFeedback}
         />

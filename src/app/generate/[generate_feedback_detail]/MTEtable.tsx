@@ -16,7 +16,14 @@ import SkeletonTable from "@/components/resuseables/SkeletonTable";
 
 const tableHeadingsMTE = ["S.No.", "Reviewer", "Email", "Designation"];
 
-const tableSubHeadings = ["S.No.", "Feedback Name", "Score", "Description"];
+const tableSubHeadings = [
+  "S.No.",
+  "Feedback Name",
+  "Input",
+  "Score",
+  "Description",
+  "MCQ Option",
+];
 
 const MTEtable = (props: any) => {
   const {
@@ -28,23 +35,22 @@ const MTEtable = (props: any) => {
   } = props;
   return (
     <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
-    <Table aria-label="collapsible table">
-      <TableHead>
-        <TableRow>
-          <TableCell />
-          {tableHeadingsMTE.map((item: string) => (
-            <TableCell
-              align={item === "S.No." ? "left" : "center"}
-              key={item}
-            >
-              {item}
-            </TableCell>
-          ))}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {feedbackResponseList?.responses?.map(
-          (row: any, index: number) => {
+      <Table aria-label="collapsible table">
+        <TableHead>
+          <TableRow>
+            <TableCell />
+            {tableHeadingsMTE.map((item: string) => (
+              <TableCell
+                align={item === "S.No." ? "left" : "center"}
+                key={item}
+              >
+                {item}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {feedbackResponseList?.responses?.map((row: any, index: number) => {
             return (
               <>
                 <TableRow
@@ -79,9 +85,7 @@ const MTEtable = (props: any) => {
                     colSpan={6}
                   >
                     <Collapse
-                      in={
-                        openAllCollapses || (openId === row?._id && open)
-                      }
+                      in={openAllCollapses || (openId === row?._id && open)}
                       timeout="auto"
                       unmountOnExit
                     >
@@ -105,34 +109,30 @@ const MTEtable = (props: any) => {
                               <Table size="small" aria-label="purchases">
                                 <TableHead>
                                   <TableRow>
-                                    {tableSubHeadings.map(
-                                      (item: string) => (
-                                        <TableCell
-                                          align={
-                                            item === "S.No."
-                                              ? "left"
-                                              : "center"
-                                          }
-                                          key={item}
-                                        >
-                                          {item}
-                                        </TableCell>
-                                      )
-                                    )}
+                                    {tableSubHeadings.map((item: string) => (
+                                      <TableCell
+                                        align={
+                                          item === "S.No." ? "left" : "center"
+                                        }
+                                        key={item}
+                                      >
+                                        {item}
+                                      </TableCell>
+                                    ))}
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
                                   {items?.form_response?.map(
                                     (historyRow: any, index: number) => (
                                       <TableRow key={historyRow._id}>
-                                        <TableCell
-                                          component="th"
-                                          scope="row"
-                                        >
+                                        <TableCell component="th" scope="row">
                                           {index + 1}
                                         </TableCell>
                                         <TableCell align="center">
                                           {historyRow?.feedbackName}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          {historyRow.input || "_"}
                                         </TableCell>
                                         <TableCell align="center">
                                           {historyRow.score === ""
@@ -143,6 +143,11 @@ const MTEtable = (props: any) => {
                                           {historyRow.description === ""
                                             ? "__"
                                             : historyRow.description}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                          {!historyRow.option
+                                            ? "__"
+                                            : historyRow.option}
                                         </TableCell>
                                       </TableRow>
                                     )
@@ -158,11 +163,10 @@ const MTEtable = (props: any) => {
                 </TableRow>
               </>
             );
-          }
-        )}
-      </TableBody>
-    </Table>
-  </TableContainer>
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
 

@@ -6,9 +6,14 @@ import NoDataFound from "@/components/resuseables/NoDataFound";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
 import {
   Box,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   InputLabel,
   MenuItem,
   OutlinedInput,
+  Radio,
+  RadioGroup,
   Select,
   Typography,
 } from "@mui/material";
@@ -84,9 +89,16 @@ const sliderLabels = [
 const FillFeedbackForm = () => {
   const searchParams: any = useSearchParams();
   const [validate, setValidate] = useState(false);
+  const [value, setValue] = useState("");
   const [activePage, setActivePage] = useState(false);
   const [formData, setFormData] = useState<
-    Array<{ _id: string; score?: number; description: string }>
+    Array<{
+      _id: string;
+      input: string;
+      score?: number;
+      description: string;
+      option: "string";
+    }>
   >([]);
   const feedbackId = searchParams.get("id");
 
@@ -117,8 +129,16 @@ const FillFeedbackForm = () => {
       const obj: any = data?.data?.feedback_parameters?.map((item: any) => {
         return {
           _id: item._id,
-          score: "",
-          description: "",
+          ...(item.feedback_parameter_type === "MCQ" ||
+          item.feedback_parameter_type === "Input"
+            ? {}
+            : { score: "" }),
+          ...(item.feedback_parameter_type === "MCQ" ||
+          item.feedback_parameter_type === "Input"
+            ? {}
+            : { description: "" }),
+          ...(item.feedback_parameter_type === "MCQ" ? { option: "" } : {}),
+          ...(item.feedback_parameter_type === "Input" ? { input: "" } : {}),
           type: item.feedback_parameter_type,
           feedbackName: item.feedbackName,
         };
@@ -145,6 +165,10 @@ const FillFeedbackForm = () => {
   const isValid = formData.some((item: any) => {
     if (item.type === "Both Score and Description") {
       return item.score === "" || item.description.trim() === "";
+    } else if (item.type === "MCQ") {
+      return item.option === "";
+    } else if (item.type === "Input") {
+      return item.input === "";
     } else if (item.type === "Description") {
       return item.score === "" && item.description.trim() === "";
     } else if (item.type === "Score") {
@@ -163,30 +187,27 @@ const FillFeedbackForm = () => {
       const payload = data?.data?.feedback_type === ETM && {
         ...allPrevData,
         responses: data?.data?.responses?.length
-          ? data?.data?.responses?.map((it: any) => {
-              if (it._id === feedbackReviewer?.data?._id) {
-                return {
-                  ...it,
-                  userProgress: [
-                    { ...data?.data?.review[0], form_response: formData },
-                  ],
-                };
-              } else {
-                return it;
-              }
-            })
-          : data?.data?.reviewer?.map((it: any) => {
-              if (it._id === feedbackReviewer?.data?._id) {
-                return {
-                  ...it,
-                  userProgress: [
-                    { ...data?.data?.review[0], form_response: formData },
-                  ],
-                };
-              } else {
-                return it;
-              }
-            }),
+          ? [
+              ...data?.data?.responses,
+              {
+                ...feedbackReviewer.data,
+                userProgress: [
+                  { ...data?.data?.review[0], form_response: formData },
+                ],
+              },
+            ]
+          : data?.data?.reviewer
+              ?.map((it: any) => {
+                if (it._id === feedbackReviewer?.data?._id) {
+                  return {
+                    ...it,
+                    userProgress: [
+                      { ...data?.data?.review[0], form_response: formData },
+                    ],
+                  };
+                }
+              })
+              .filter((item: any) => item !== undefined),
       };
 
       const payloadETMAnonymous = data?.data?.feedback_type === ETM &&
@@ -203,26 +224,20 @@ const FillFeedbackForm = () => {
       const payloadSelfAssessment = data?.data?.feedback_type === SA && {
         ...allPrevData,
         responses: data?.data?.responses?.length
-          ? data?.data?.responses?.map((it: any) => {
-              if (it._id === feedbackReviewer?.data?._id) {
-                return {
-                  ...it,
-                  form_response: formData,
-                };
-              } else {
-                return it;
-              }
-            })
-          : data?.data?.reviewer?.map((it: any) => {
-              if (it._id === feedbackReviewer?.data?._id) {
-                return {
-                  ...it,
-                  form_response: formData,
-                };
-              } else {
-                return it;
-              }
-            }),
+          ? [
+              ...data?.data?.responses,
+              { ...feedbackReviewer.data, form_response: formData },
+            ]
+          : data?.data?.reviewer
+              ?.map((it: any) => {
+                if (it._id === feedbackReviewer?.data?._id) {
+                  return {
+                    ...it,
+                    form_response: formData,
+                  };
+                }
+              })
+              .filter((item: any) => item !== undefined),
       };
 
       const payloadMTE = data?.data?.feedback_type === MTE && {
@@ -296,7 +311,6 @@ const FillFeedbackForm = () => {
             ? payloadETMAnonymous
             : payload,
       };
-
       const resp = await updateFeedbackForm(responsePayload).unwrap();
       if (resp?.code) {
         setFeedbackUser("");
@@ -377,6 +391,20 @@ const FillFeedbackForm = () => {
     setFormData((prevData) =>
       prevData.map((item: any) =>
         item._id === id ? { ...item, description } : item
+      )
+    );
+  };
+
+  const handleInputChange = (id: string, input: string) => {
+    setFormData((prevData) =>
+      prevData.map((item: any) => (item._id === id ? { ...item, input } : item))
+    );
+  };
+
+  const handleMCQOptionChange = (id: string, option: string) => {
+    setFormData((prevData) =>
+      prevData.map((item: any) =>
+        item._id === id ? { ...item, option } : item
       )
     );
   };
@@ -520,11 +548,65 @@ const FillFeedbackForm = () => {
                               *
                             </Typography>
                           </Box>
-                          <Typography>
-                            Description : {item.feedbackDescription}
-                          </Typography>
-                          {item.feedback_parameter_type ===
-                          "Both Score and Description" ? (
+                          {item.feedbackDescription && (
+                            <Typography>
+                              Description : {item.feedbackDescription}
+                            </Typography>
+                          )}
+                          {item.feedback_parameter_type === "Input" ? (
+                            <InputField
+                              type="text"
+                              disabled={
+                                !feedbackUser &&
+                                data?.data?.review?.length !== 1
+                              }
+                              sx={{
+                                margin: "10px 0",
+                                backgroundColor: "#fff",
+                                "& fieldset": { border: "none" },
+                                borderRadius: "5px",
+                              }}
+                              size="small"
+                              value={
+                                formData?.find(
+                                  (data: any) => data._id === item._id
+                                )?.input || ""
+                              }
+                              onChange={(e: any) =>
+                                handleInputChange(item._id, e.target.value)
+                              }
+                              id="input"
+                              name={item.feedbackName}
+                            />
+                          ) : item.feedback_parameter_type === "MCQ" ? (
+                            <RadioGroup
+                              sx={{ margin: "15px 0" }}
+                              aria-labelledby="demo-controlled-radio-buttons-group"
+                              name="controlled-radio-buttons-group"
+                              value={
+                                formData?.find(
+                                  (data: any) => data._id === item._id
+                                )?.option || ""
+                              }
+                              onChange={(e: any) =>
+                                handleMCQOptionChange(item._id, e.target.value)
+                              }
+                            >
+                              {item?.mcqOption?.map(
+                                (it: string, index: number) => {
+                                  return (
+                                    <FormControlLabel
+                                      key={it + index}
+                                      value={it}
+                                      control={<Radio />}
+                                      label={it}
+                                    />
+                                  );
+                                }
+                              )}
+                            </RadioGroup>
+                          ) : item.feedback_parameter_type ===
+                            "Both Score and Description" ? (
                             <Box key={item.feedbackName} marginBottom="10px">
                               <Slider
                                 sx={{ margin: "30px 0" }}

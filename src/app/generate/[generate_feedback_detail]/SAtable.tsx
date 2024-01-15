@@ -22,7 +22,14 @@ const tableHeadings = [
   "Designation",
 ];
 
-const tableSubHeadings = ["S.No.", "Feedback Name", "Score", "Description"];
+const tableSubHeadings = [
+  "S.No.",
+  "Feedback Name",
+  "Input",
+  "Score",
+  "Description",
+  "MCQ Option",
+];
 
 const SAtable = (props: any) => {
   const {
@@ -32,6 +39,7 @@ const SAtable = (props: any) => {
     openId,
     openAllCollapses,
   } = props;
+
   return (
     <TableContainer sx={{ marginTop: "20px" }} component={Paper}>
       <Table aria-label="collapsible table">
@@ -111,14 +119,20 @@ const SAtable = (props: any) => {
                                   {historyRow.feedbackName}
                                 </TableCell>
                                 <TableCell align="center">
-                                  {historyRow.score === ""
-                                    ? "__"
-                                    : historyRow.score}
+                                  {!historyRow.input ? "__" : historyRow.input}
                                 </TableCell>
                                 <TableCell align="center">
-                                  {historyRow.description === ""
+                                  {!historyRow.score ? "__" : historyRow.score}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {!historyRow.description
                                     ? "__"
                                     : historyRow.description}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {!historyRow.option
+                                    ? "__"
+                                    : historyRow.option}
                                 </TableCell>
                               </TableRow>
                             )

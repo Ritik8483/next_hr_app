@@ -7,7 +7,14 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { Paper } from "@mui/material";
 
-const tableHeadings = ["S.No.", "Feedback Name", "Score", "Description"];
+const tableHeadings = [
+  "S.No.",
+  "Feedback Name",
+  "Input",
+  "Score",
+  "Description",
+  "MCQ Option",
+];
 
 const ETMAnonymousTable = (props: any) => {
   const { feedbackResponseList } = props;
@@ -29,18 +36,20 @@ const ETMAnonymousTable = (props: any) => {
         </TableHead>
         <TableBody>
           {feedbackResponseList?.responses?.map((row: any, index: number) => (
-            <TableRow
-              key={row._id}
-            >
+            <TableRow key={row._id}>
               <TableCell align="left" component="th" scope="row">
                 {index + 1}
               </TableCell>
               <TableCell align="center">{row.feedbackName}</TableCell>
+              <TableCell align="center">{row.input || "_"}</TableCell>
               <TableCell align="center">
                 {row.score === "" ? "__" : row.score}
               </TableCell>
               <TableCell align="center">
                 {row.description === "" ? "__" : row.description}
+              </TableCell>
+              <TableCell align="center">
+                {!row.option ? "__" : row.option}
               </TableCell>
             </TableRow>
           ))}

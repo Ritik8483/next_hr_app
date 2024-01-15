@@ -733,6 +733,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                           checked={feedbackParametersArray?.includes(it._id)}
                         />
                         <ListItemText
+                          sx={{ textWrap: "balance" }}
                           primary={
                             it.feedbackName +
                             " " +

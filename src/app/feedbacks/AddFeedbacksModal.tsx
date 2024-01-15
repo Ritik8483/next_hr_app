@@ -17,7 +17,7 @@ import {
 import InputField from "@/components/resuseables/InputField";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { addFeedbacksSchema } from "@/schema/schema";
+import { addFeedbacksSchema, addFeedbacksMCQSchema } from "@/schema/schema";
 import Buttons from "@/components/resuseables/Buttons";
 import { useDispatch } from "react-redux";
 import { openAlert } from "@/redux/slices/snackBarSlice";
@@ -25,7 +25,10 @@ import {
   useAddFeedbackParameterMutation,
   useUpdateFeedbackParameterMutation,
 } from "@/redux/api/api";
-import { addFeedbackParameterCode, updateFeedbackParameterCode } from "@/constants/constant";
+import {
+  addFeedbackParameterCode,
+  updateFeedbackParameterCode,
+} from "@/constants/constant";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -43,7 +46,13 @@ interface AddFeedbackModalInterface {
   feedbackDetail: any;
 }
 
-const feedbackTypes = ["Score", "Description", "Both Score and Description"];
+const feedbackTypes = [
+  "Input",
+  "Score",
+  "MCQ",
+  "Description",
+  "Both Score and Description",
+];
 
 const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
   const dispatch = useDispatch();
@@ -56,6 +65,9 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
     feedbackDetail?.feedback_parameter_type || ""
   );
   const [validate, setValidate] = useState(false);
+  const [mcqOption, setMcqOption] = useState(
+    feedbackDetail?.mcqOption?.length ? feedbackDetail.mcqOption : [""]
+  );
 
   const {
     register,
@@ -63,29 +75,64 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
     watch,
     formState: { errors, isSubmitting, isSubmitted },
   } = useForm<any>({
-    resolver: yupResolver(addFeedbacksSchema),
+    resolver: yupResolver(
+      feedbackParameterType === "MCQ"
+        ? addFeedbacksMCQSchema
+        : addFeedbacksSchema
+    ),
     defaultValues: feedbackDetail,
   });
 
+  const handleAddFields = () => {
+    const values = [...mcqOption];
+    values.push("");
+    setMcqOption(values);
+  };
+
+  const handleRemoveFields = (index: any) => {
+    const values = [...mcqOption];
+    values.splice(index, 1);
+    setMcqOption(values);
+  };
+
+  const handleInputChange = (index: any, event: any) => {
+    const values = [...mcqOption];
+    if (event.target.name === "mcqOption") {
+      values[index] = event.target.value;
+    }
+    setMcqOption(values);
+  };
+
   const handleSubmitForm = async (data: any) => {
-    if (!feedbackParameterType) return;
+    if (
+      !feedbackParameterType ||
+      (feedbackParameterType === "MCQ" && mcqOption.includes(""))
+    )
+      return;
     try {
       if (feedbackDetail._id) {
-        if (
-          feedbackDetail.feedbackName === data.feedbackName &&
-          feedbackDetail.feedbackDescription === data.feedbackDescription &&
-          feedbackDetail.feedback_parameter_type === feedbackParameterType
-        )
-          return;
         const payload = {
           url: "feedback-parameters",
           id: feedbackDetail._id,
           body: {
             ...data,
             feedback_parameter_type: feedbackParameterType,
+            mcqOption,
           },
         };
-        const resp = await updateFeedbackParameter(payload).unwrap();
+
+        const payloadMCQ = {
+          url: "feedback-parameters",
+          id: feedbackDetail._id,
+          body: {
+            ...data,
+            feedback_parameter_type: feedbackParameterType,
+            mcqOption,
+          },
+        };
+        const resp = await updateFeedbackParameter(
+          feedbackParameterType === "MCQ" ? payloadMCQ : payload
+        ).unwrap();
         if (resp?.code === updateFeedbackParameterCode) {
           dispatch(
             openAlert({
@@ -103,7 +150,17 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
             feedback_parameter_type: feedbackParameterType,
           },
         };
-        const resp = await addFeedbackParameter(payload).unwrap();
+        const payloadMCQ = {
+          url: "feedback-parameters",
+          body: {
+            ...data,
+            feedback_parameter_type: feedbackParameterType,
+            mcqOption,
+          },
+        };
+        const resp = await addFeedbackParameter(
+          feedbackParameterType === "MCQ" ? payloadMCQ : payload
+        ).unwrap();
         if (resp?.code === addFeedbackParameterCode) {
           dispatch(
             openAlert({
@@ -190,16 +247,79 @@ const AddFeedbacksModal = (props: AddFeedbackModalInterface) => {
               label="Feedback name"
               errorMessage={errors.feedbackName?.message}
             />
-            <InputField
-              register={register}
-              type="text"
-              name="feedbackDescription"
-              multiline
-              rows={4}
-              placeholder="Enter feedback description"
-              label="Feedback description"
-              errorMessage={errors.feedbackDescription?.message}
-            />
+            {feedbackParameterType === "MCQ" && (
+              <>
+                {mcqOption.map((item: any, index: number) => {
+                  return (
+                    <>
+                      <InputField
+                        type="text"
+                        value={item}
+                        name="mcqOption"
+                        onChange={(event: any) =>
+                          handleInputChange(index, event)
+                        }
+                        placeholder="Enter MCQ option"
+                        label={`Option ${index + 1}`}
+                      />
+                      {validate && mcqOption[index] === "" && (
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            color: "red",
+                            marginTop: "-20px",
+                          }}
+                        >
+                          Option is required
+                        </Typography>
+                      )}
+
+                      <Box
+                        display={mcqOption.length <= 1 ? "none" : "flex"}
+                        justifyContent="end"
+                        marginRight={
+                          index + 1 == mcqOption.length ? "120px" : 0
+                        }
+                      >
+                        <Buttons
+                          onClick={() => handleRemoveFields(index)}
+                          color="secondary"
+                          sx={{ textTransform: "capitalize" }}
+                          variant="outlined"
+                          text="Delete"
+                        />
+                      </Box>
+                    </>
+                  );
+                })}
+                <Box
+                  display="flex"
+                  justifyContent="end"
+                  marginTop={mcqOption.length <= 1 ? 0 : "-56px"}
+                >
+                  <Buttons
+                    disabled={mcqOption.includes("")}
+                    onClick={handleAddFields}
+                    color="primary"
+                    sx={{ textTransform: "capitalize" }}
+                    variant="outlined"
+                    text="Add Option"
+                  />
+                </Box>
+              </>
+            )}
+            {feedbackParameterType !== "MCQ" && (
+              <InputField
+                register={register}
+                type="text"
+                name="feedbackDescription"
+                multiline
+                rows={4}
+                placeholder="Enter feedback description"
+                label="Feedback description(optional)"
+                errorMessage={errors.feedbackDescription?.message}
+              />
+            )}
           </Box>
           <Box
             display="flex"
