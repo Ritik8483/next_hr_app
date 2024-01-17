@@ -388,7 +388,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
             {feedbackFormType !== SA && (
               <Box>
                 <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
-                  Review(Shashank)
+                  Review
                 </InputLabel>
                 <Select
                   disabled={!feedbackFormType}

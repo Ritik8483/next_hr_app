@@ -86,7 +86,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 
 export default function SidebarDrawer({ children }: any) {
   const theme = useTheme();
-  const pathname = usePathname();
+  const pathname: any = usePathname();
   const sidebarDrawerRef: any = useRef();
   const router: any = useRouter();
   const dispatch = useDispatch();
@@ -140,6 +140,15 @@ export default function SidebarDrawer({ children }: any) {
       router.push(str);
     }
   };
+
+  useEffect(() => {
+    const pathName =
+      pathname?.split("/")[1].charAt(0).toUpperCase() +
+      pathname?.split("/")[1].slice(1);
+    if (drawerOptions.includes(pathName)) {
+      setOption(pathName);
+    }
+  }, [pathname]);
 
   return (
     <>

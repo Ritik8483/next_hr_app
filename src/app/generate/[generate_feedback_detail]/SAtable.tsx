@@ -146,24 +146,16 @@ const SAtable = (props: any) => {
                                     {historyRow.feedbackName}
                                   </TableCell>
                                   <TableCell align="center">
-                                    {!historyRow.input
-                                      ? "__"
-                                      : historyRow.input}
+                                    {historyRow.input || "__"}
                                   </TableCell>
                                   <TableCell align="center">
-                                    {!historyRow.score
-                                      ? "__"
-                                      : historyRow.score}
+                                    {historyRow.score || "__"}
                                   </TableCell>
                                   <TableCell align="center">
-                                    {!historyRow.description
-                                      ? "__"
-                                      : historyRow.description}
+                                    {historyRow.description || "__"}
                                   </TableCell>
                                   <TableCell align="center">
-                                    {!historyRow.option
-                                      ? "__"
-                                      : historyRow.option}
+                                    {historyRow.option || "__"}
                                   </TableCell>
                                 </TableRow>
                               )

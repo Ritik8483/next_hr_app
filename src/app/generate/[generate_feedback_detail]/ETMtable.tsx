@@ -127,23 +127,25 @@ const ETMtable = (props: any) => {
                       timeout="auto"
                       unmountOnExit
                     >
-                      {row.userProgress?.map((items: any) => {
+                      {row.userProgress?.map((items: any, ind: number) => {
                         return (
                           <>
                             <Box sx={{ margin: 1 }}>
-                              <Typography
-                                variant="h6"
-                                gutterBottom
-                                component="div"
-                              >
-                                {items.firstName +
-                                  " " +
-                                  items.lastName +
-                                  " " +
-                                  "(" +
-                                  items.email +
-                                  ")"}
-                              </Typography>
+                              {ind > 0 && (
+                                <Typography
+                                  variant="h6"
+                                  gutterBottom
+                                  component="div"
+                                >
+                                  {items.firstName +
+                                    " " +
+                                    items.lastName +
+                                    " " +
+                                    "(" +
+                                    items.email +
+                                    ")"}
+                                </Typography>
+                              )}
                               <Table size="small" aria-label="purchases">
                                 <TableHead>
                                   <TableRow>
@@ -173,19 +175,13 @@ const ETMtable = (props: any) => {
                                           {historyRow.input || "_"}
                                         </TableCell>
                                         <TableCell align="center">
-                                          {historyRow.score === ""
-                                            ? "__"
-                                            : historyRow.score}
+                                          {historyRow.score || "__"}
                                         </TableCell>
                                         <TableCell align="center">
-                                          {historyRow.description === ""
-                                            ? "__"
-                                            : historyRow.description}
+                                          {historyRow.description || "__"}
                                         </TableCell>
                                         <TableCell align="center">
-                                          {!historyRow.option
-                                            ? "__"
-                                            : historyRow.option}
+                                          {historyRow.option || "__"}
                                         </TableCell>
                                       </TableRow>
                                     )

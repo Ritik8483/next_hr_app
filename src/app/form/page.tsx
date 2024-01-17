@@ -583,6 +583,10 @@ const FillFeedbackForm = () => {
                                 (it: string, index: number) => {
                                   return (
                                     <FormControlLabel
+                                      disabled={
+                                        !feedbackUser &&
+                                        data?.data?.review?.length !== 1
+                                      }
                                       key={it + index}
                                       value={it}
                                       control={<Radio />}
@@ -778,9 +782,7 @@ const FillFeedbackForm = () => {
           </>
         ) : (
           <>
-            <Box
-              className={styles.formSubmissionStyle}
-            >
+            <Box className={styles.formSubmissionStyle}>
               <Typography fontSize="24px" color="#000">
                 Thank you
               </Typography>

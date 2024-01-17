@@ -185,19 +185,13 @@ const MTEtable = (props: any) => {
                                             {historyRow.input || "_"}
                                           </TableCell>
                                           <TableCell align="center">
-                                            {historyRow.score === ""
-                                              ? "__"
-                                              : historyRow.score}
+                                            {historyRow.score || "__"}
                                           </TableCell>
                                           <TableCell align="center">
-                                            {historyRow.description === ""
-                                              ? "__"
-                                              : historyRow.description}
+                                            {historyRow.description || "__"}
                                           </TableCell>
                                           <TableCell align="center">
-                                            {!historyRow.option
-                                              ? "__"
-                                              : historyRow.option}
+                                            {historyRow.option || "__"}
                                           </TableCell>
                                         </TableRow>
                                       )
