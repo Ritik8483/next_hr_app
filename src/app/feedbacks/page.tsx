@@ -1,47 +1,44 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Box, Switch, Typography } from "@mui/material";
 import SearchField from "@/components/resuseables/SearchField";
 import Buttons from "@/components/resuseables/Buttons";
 import { useDispatch } from "react-redux";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useRouter } from "next/navigation";
 import AlertBox from "@/components/resuseables/AlertBox";
 import AddFeedbacksModal from "./AddFeedbacksModal";
 import useDebounce from "@/components/hooks/useDebounce";
 import SkeletonTable from "@/components/resuseables/SkeletonTable";
-import { StyledTableCell, StyledTableRow } from "@/styles/styles";
 import NoDataFound from "@/components/resuseables/NoDataFound";
-import PaginationTable from "@/components/resuseables/Pagination";
 import { openAlert } from "@/redux/slices/snackBarSlice";
 import {
   deleteFeedbackParameterCode,
+  deleteGroupFeedbackCode,
   limit,
-  tableHeadings,
 } from "@/constants/constant";
 import {
+  useDeleteFeedbackFormGroupMutation,
   useDeleteFeedbackParameterMutation,
+  useGetAllFeedbackGroupsQuery,
   useGetAllFeedbackParametersQuery,
 } from "@/redux/api/api";
+import { setFeedbackSwitch } from "@/redux/slices/authSlice";
+import GroupFeedbackModal from "./GroupFeedbackModal";
+import FeedbackParameterTable from "./FeedbackParameterTable";
+import GroupParametersTable from "./GroupParametersTable";
 
 const Feedbacks = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [searchText, setSearchText] = useState<string>("");
   const [openFeedbackModal, setOpenFeedbackModal] = useState<boolean>(false);
+  const [openFeedbackGroupModal, setOpenFeedbackGroupModal] =
+    useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [checked, setChecked] = useState(false);
   const [feedbackDetail, setFeedbackDetail] = useState({});
+  const [feedbackGroupDetail, setFeedbackGroupDetail] = useState({});
   const [openAlertBox, setOpenAlertBox] = useState<any>({
     data: {},
     state: false,
@@ -53,14 +50,31 @@ const Feedbacks = () => {
     url: "feedback-parameters",
     page: currentPage,
     limit: limit,
-    search: debouncedValue || "",
+    search: !checked && (debouncedValue || ""),
+  };
+
+  const payloadFeedback = {
+    url: "group-parameters",
+    page: currentPage,
+    limit: limit,
+    search: checked && (debouncedValue || ""),
   };
   const { data, isLoading, error } = useGetAllFeedbackParametersQuery(payload);
-  const [deleteFeedbackParameter] = useDeleteFeedbackParameterMutation();
 
-  const handleAddUser = () => {
+  const { data: feedbackGroupsData } =
+    useGetAllFeedbackGroupsQuery(payloadFeedback);
+
+  const [deleteFeedbackParameter] = useDeleteFeedbackParameterMutation();
+  const [deleteFeedbackFormGroup] = useDeleteFeedbackFormGroupMutation();
+
+  const handleAddFeedback = () => {
     setFeedbackDetail({});
     setOpenFeedbackModal(true);
+  };
+
+  const handleAddGroupFeedback = () => {
+    setFeedbackGroupDetail({});
+    setOpenFeedbackGroupModal(true);
   };
 
   const handleClose = (value: string) => {
@@ -77,6 +91,11 @@ const Feedbacks = () => {
   const handleEdit = (item: any) => {
     setFeedbackDetail(item);
     setOpenFeedbackModal(true);
+  };
+
+  const handleGroupEdit = (item: any) => {
+    setFeedbackGroupDetail(item);
+    setOpenFeedbackGroupModal(true);
   };
 
   const handleDeleteFeedback = async () => {
@@ -100,6 +119,33 @@ const Feedbacks = () => {
     }
   };
 
+  const handleDeleteGroupFeedback = async () => {
+    try {
+      const payload = {
+        url: "group-parameters",
+        id: openAlertBox.data._id,
+      };
+      const resp = await deleteFeedbackFormGroup(payload).unwrap();
+      if (resp?.code === deleteGroupFeedbackCode) {
+        dispatch(
+          openAlert({
+            type: "success",
+            message: resp.message,
+          })
+        );
+        setOpenAlertBox(false);
+      }
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
+  const handleSwitchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChecked(e.target.checked);
+    dispatch(setFeedbackSwitch(e.target.checked));
+    setSearchText("");
+  };
+
   return (
     <>
       <Box
@@ -113,11 +159,26 @@ const Feedbacks = () => {
           searchText={searchText}
           placeholder="Search feedback by name"
         />
-        <Buttons
-          text="Add Feedback"
-          sx={{ textTransform: "capitalize" }}
-          onClick={handleAddUser}
-        />
+        <Box display="flex" gap="20px" alignItems="center">
+          <Buttons
+            text="Group Feedback"
+            sx={{ textTransform: "capitalize" }}
+            onClick={handleAddGroupFeedback}
+          />
+          <Buttons
+            text="Add Feedback"
+            sx={{ textTransform: "capitalize" }}
+            onClick={handleAddFeedback}
+          />
+        </Box>
+      </Box>
+
+      <Box display="flex" alignItems="center" gap="5px" marginBottom="20px">
+        <Typography color={!checked ? "#1976D2" : "grey"}>Feedbacks</Typography>
+        <Switch checked={checked} onChange={handleSwitchChange} />
+        <Typography color={checked ? "#1976D2" : "grey"}>
+          Group Feedbacks
+        </Typography>
       </Box>
 
       {isLoading ? (
@@ -128,93 +189,24 @@ const Feedbacks = () => {
         />
       ) : !data?.data?.length ? (
         <NoDataFound text="No data Found" />
-      ) : data?.data?.length ? (
-        <>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 700 }} aria-label="customized table">
-              <TableHead>
-                <TableRow>
-                  {tableHeadings.map((item: string) => (
-                    <StyledTableCell
-                      align={
-                        item === "S.No."
-                          ? "left"
-                          : item === "Actions"
-                          ? "right"
-                          : "center"
-                      }
-                      key={item}
-                    >
-                      {item}
-                    </StyledTableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data?.data?.map((item: any, index: number) => {
-                  return (
-                    <StyledTableRow
-                      onClick={() => handleRowClick(item._id)}
-                      key={item._id}
-                    >
-                      <StyledTableCell component="th" scope="row">
-                        {currentPage === 1
-                          ? index + 1
-                          : limit * currentPage + 1 - limit + index}
-                      </StyledTableCell>
-                      <StyledTableCell align="center">
-                        {item.feedback_parameter_type}
-                      </StyledTableCell>
-                      <StyledTableCell align="center">
-                        {item.feedbackName}
-                      </StyledTableCell>
-                      <StyledTableCell align="center">
-                        {item.mcqOption.length
-                          ? item.mcqOption.map((it: string, index: number) => (
-                              <Box key={it}>
-                                <Typography>
-                                  {index + 1}. {it}
-                                </Typography>
-                              </Box>
-                            ))
-                          : item.feedbackDescription === ""
-                          ? "_"
-                          : item.feedbackDescription}
-                      </StyledTableCell>
-                      <StyledTableCell
-                        align="right"
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                      >
-                        <Box
-                          display="flex"
-                          gap="15px"
-                          justifyContent="flex-end"
-                        >
-                          <EditIcon
-                            onClick={() => handleEdit(item)}
-                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                          />
-                          <DeleteIcon
-                            onClick={() =>
-                              setOpenAlertBox({ data: item, state: true })
-                            }
-                            sx={{ cursor: "pointer", color: "var(--iconGrey)" }}
-                          />
-                        </Box>
-                      </StyledTableCell>
-                    </StyledTableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            <PaginationTable
-              totalCount={Math.ceil(data?.total / limit)}
-              currentPage={currentPage}
-              totalNumber={data?.total}
-              setCurrentPage={setCurrentPage}
-            />
-          </TableContainer>
-        </>
+      ) : data?.data?.length && !checked ? (
+        <FeedbackParameterTable
+          data={data}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          handleRowClick={handleRowClick}
+          handleEdit={handleEdit}
+          setOpenAlertBox={setOpenAlertBox}
+        />
+      ) : data?.data?.length && checked ? (
+        <GroupParametersTable
+          data={feedbackGroupsData}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          handleRowClick={handleRowClick}
+          handleGroupEdit={handleGroupEdit}
+          setOpenAlertBox={setOpenAlertBox}
+        />
       ) : error ? (
         <NoDataFound text="Something went wrong" />
       ) : null}
@@ -227,15 +219,29 @@ const Feedbacks = () => {
         />
       )}
 
+      {openFeedbackGroupModal && (
+        <GroupFeedbackModal
+          openFeedbackGroupModal={openFeedbackGroupModal}
+          onClose={() => setOpenFeedbackGroupModal(false)}
+          feedbackGroupDetail={feedbackGroupDetail}
+        />
+      )}
+
       {openAlertBox && (
         <AlertBox
           open={openAlertBox.state}
           cancelText="No Cancel"
           confirmText="Yes Delete"
-          mainHeaderText="Are you sure you want to delete this feedback?"
+          mainHeaderText={
+            checked
+              ? "Are you sure you want to delete this feedback group?"
+              : "Are you sure you want to delete this feedback?"
+          }
           // userName={openAlertBox.data.feedbackName}
           onClose={handleClose}
-          handleClick={handleDeleteFeedback}
+          handleClick={
+            checked ? handleDeleteGroupFeedback : handleDeleteFeedback
+          }
         />
       )}
     </>

@@ -36,14 +36,13 @@ import {
 } from "@/constants/constant";
 import {
   useAddGenerateFeedbackFormMutation,
+  useGetAllFeedbackGroupsQuery,
   useGetAllFeedbackParametersQuery,
   useGetAllRolesQuery,
   useGetAllUsersQuery,
   useUpdateFeedbackFormMutation,
 } from "@/redux/api/api";
 import InputField from "@/components/resuseables/InputField";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
 
 interface GenerateFeedbackInterface {
   feedbackFormModal: boolean;
@@ -92,6 +91,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     feedbackFormDetail?.anonymous || false
   );
   const [searchReviewText, setSearchReviewText] = useState<string>("");
+  const [feedbackIds, setFeedbackIds] = useState<any>([]);
   const [searchReviewerText, setSearchReviewerText] = useState<string>("");
   const [reviewType, setReviewType] = useState<any>(
     (feedbackFormDetail?.review && feedbackFormDetail?.review[0]) || ""
@@ -117,6 +117,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     search: debouncedReviewer,
   };
 
+  const payloadFeedback = {
+    url: "group-parameters",
+    // search: ,
+  };
+
   const feedbacksPayload = {
     url: "feedback-parameters",
     search: debouncedFeedbacks,
@@ -125,6 +130,8 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
   const { data: feedbackParametersData } =
     useGetAllFeedbackParametersQuery(feedbacksPayload);
   const { data: rolesData } = useGetAllRolesQuery(rolesPayload);
+  const { data: feedbackGroupsData } =
+    useGetAllFeedbackGroupsQuery(payloadFeedback);
 
   const handleFeedbackTypeChange = (event: SelectChangeEvent) => {
     setFeedbackFormType(event.target.value);
@@ -148,6 +155,29 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       feedbackParametersArray.push(item);
     }
     setFeedbackParametersArr(feedbackParametersArray);
+    if (Object.keys(item).includes("feedbackGroupName")) {
+      const feedParameters = feedbackParametersArray
+        ?.map((it: any) => {
+          if (Object.keys(it).includes("feedbackGroupName")) {
+            return it;
+          } else return null;
+        })
+        .filter((item: any) => item !== null)
+        .map((items: any) => items.groupFeedbacks)
+        .flat()
+        .map((ite: any) => ite._id);
+      const allDirectParameters = feedbackParametersArray
+        .map((it: any) => {
+          if (Object.keys(it).includes("feedbackName")) {
+            return it._id;
+          } else return null;
+        })
+        .filter((item: any) => item !== null);
+      const filteredParameters = [
+        ...new Set([...allDirectParameters, ...feedParameters]),
+      ];
+      setFeedbackIds(filteredParameters);
+    }
   };
 
   const handleReviewerChange = (item: any) => {
@@ -187,7 +217,26 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     setIsSubmitting(true);
 
     //extracting feedback parameters id
-    const feedParameters = feedbackParametersArr?.map((it: any) => it._id);
+    const feedParameters = feedbackParametersArr
+      ?.map((it: any) => {
+        if (Object.keys(it).includes("feedbackGroupName")) {
+          return it;
+        } else return null;
+      })
+      .filter((item: any) => item !== null)
+      .map((items: any) => items.groupFeedbacks)
+      .flat()
+      .map((ite: any) => ite._id);
+    const allDirectParameters = feedbackParametersArr
+      .map((it: any) => {
+        if (Object.keys(it).includes("feedbackName")) {
+          return it._id;
+        } else return null;
+      })
+      .filter((item: any) => item !== null);
+    const filteredParameters = [
+      ...new Set([...allDirectParameters, ...feedParameters]),
+    ];
 
     //Extracting Emails of the Reviewer
     const reviewerUsersEmails = reviewerType?.map((it: any) => it.email);
@@ -245,7 +294,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
           ? [reviewType]
           : flattenedIdsArray,
       reviewer: allUsersArr,
-      feedback_parameters: feedParameters,
+      feedback_parameters: filteredParameters,
       reviewerEmails: filteredEmails.toString(),
       anonymous: feedbackFormType === ETM ? anonymous : undefined,
     };
@@ -312,6 +361,10 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
       e.stopPropagation();
     }
   };
+
+  const feedbackParaIds = feedbackFormDetail?.feedback_parameters?.map(
+    (it: any) => it._id
+  );
 
   return (
     <Modal
@@ -675,6 +728,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
               <InputLabel sx={{ fontSize: "12px", color: "var(--iconGrey)" }}>
                 Feedback Parameters
               </InputLabel>
+
               <Select
                 disabled={
                   !feedbackFormType ||
@@ -692,9 +746,13 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                   if (selected.length === 0 || selected === undefined) {
                     return <>Selects Feedback Parameters</>;
                   }
-                  const feedbackNames = selected?.map(
-                    (it: any) => it.feedbackName
-                  );
+                  const feedbackNames = selected?.map((it: any) => {
+                    if (Object.keys(it).includes("feedbackName")) {
+                      return it.feedbackName;
+                    } else {
+                      return it.feedbackGroupName;
+                    }
+                  });
 
                   return feedbackNames.join(", ");
                 }}
@@ -716,11 +774,43 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                     />
                   </MenuItem>
                 </ListSubheader>
+
+                <ListSubheader>Feedback Groups</ListSubheader>
+                {feedbackGroupsData?.data?.length ? (
+                  feedbackGroupsData?.data?.map((it: any) => {
+                    const feedIds = it?.groupFeedbacks?.map(
+                      (item: any) => item._id
+                    );
+
+                    return (
+                      <MenuItem
+                        key={it._id}
+                        value={it}
+                        onClick={() => handleFeedbackChange(it)}
+                      >
+                        <Checkbox
+                          defaultChecked={feedIds?.every((ite: any) =>
+                            feedbackParaIds?.includes(ite)
+                          )}
+                          checked={feedIds?.every((ite: any) =>
+                            feedbackParaIds?.includes(ite)
+                          )}
+                        />
+                        <ListItemText primary={it.feedbackGroupName} />
+                      </MenuItem>
+                    );
+                  })
+                ) : (
+                  <NoDataFound height="auto" text="No data Found" />
+                )}
+
+                <ListSubheader>Feedback Parameters</ListSubheader>
                 {feedbackParametersData?.data?.length ? (
                   feedbackParametersData?.data?.map((it: any) => {
                     return (
                       <MenuItem
                         key={it._id}
+                        disabled={feedbackIds.includes(it._id)}
                         value={it}
                         onClick={() => handleFeedbackChange(it)}
                       >

@@ -4,7 +4,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQuery,
-  tagTypes: ["Generate", "Parameters", "Users", "Roles"],
+  tagTypes: ["Generate", "Parameters", "Users", "Roles", "Group"],
   endpoints: (builder) => ({
     loginAdminUser: builder.mutation({
       query: (data) => ({
@@ -17,7 +17,9 @@ export const api = createApi({
     getAllFeedbackParameters: builder.query({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${
+              data.search || ""
+            }`
           : data.search
           ? `${data.url}?search=${data.search || ""}`
           : data.url,
@@ -54,13 +56,14 @@ export const api = createApi({
     getAllUsers: builder.query({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${
+              data.search || ""
+            }`
           : `${data.url}?search=${data.search || ""}`,
       }),
       providesTags: ["Users"],
     }),
 
-    
     getSingleUser: builder.query({
       query: (data) => ({
         url: `${data.url}/${data.id}`,
@@ -97,7 +100,9 @@ export const api = createApi({
     getAllRoles: builder.query<any, any>({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${
+              data.search || ""
+            }`
           : `${data.url}?search=${data.search || ""}`,
       }),
       providesTags: ["Roles"],
@@ -137,11 +142,13 @@ export const api = createApi({
       }),
       invalidatesTags: ["Generate"],
     }),
-    
+
     getAllGenerateFeedbackForm: builder.query({
       query: (data) => ({
         url: data.page
-          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${data.search || ""}`
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${
+              data.search || ""
+            }`
           : `${data.url}?search=${data.search || ""}`,
       }),
       providesTags: ["Generate"],
@@ -179,6 +186,45 @@ export const api = createApi({
       }),
     }),
 
+    getAllFeedbackGroups: builder.query({
+      query: (data) => ({
+        url: data.page
+          ? `${data.url}?page=${data.page}&limit=${data.limit}&search=${
+              data.search || ""
+            }`
+          : data.search
+          ? `${data.url}?search=${data.search || ""}`
+          : data.url,
+      }),
+      providesTags: ["Group","Parameters"],
+    }),
+
+    addFeedbackGroup: builder.mutation({
+      query: (data) => ({
+        url: data.url,
+        method: "POST",
+        body: data.body,
+      }),
+      invalidatesTags: ["Group"],
+    }),
+
+    updateFeedbackFormGroup: builder.mutation({
+      query: (data) => ({
+        url: `${data.url}/${data.id}`,
+        method: "PATCH",
+        body: data.body,
+      }),
+      invalidatesTags: ["Group"],
+    }),
+
+    deleteFeedbackFormGroup: builder.mutation({
+      query: (data) => ({
+        url: `${data.url}/${data.id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Group"],
+    }),
+
   }),
 });
 
@@ -202,5 +248,9 @@ export const {
   useAddGenerateFeedbackFormMutation,
   useUpdateFeedbackFormMutation,
   useDeleteFeedbackFormMutation,
-  useSendEmailMutation
+  useSendEmailMutation,
+  useGetAllFeedbackGroupsQuery,
+  useAddFeedbackGroupMutation,
+  useUpdateFeedbackFormGroupMutation,
+  useDeleteFeedbackFormGroupMutation
 } = api;

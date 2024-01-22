@@ -16,6 +16,11 @@ const deleteRoleCode = 3015;
 const addFeedbackFormCode = 3016;
 const updateFeedbackFormCode = 3019;
 const deleteFeedbackFormCode = 3020;
+const addGroupFeedbackCode = 3021;
+const getAllGroupFeedbackCode = 3022;
+const getSingleGroupFeedbackCode = 3023;
+const updateGroupFeedbackCode = 3024;
+const deleteGroupFeedbackCode = 3025;
 const loginUserCode = 4001;
 const signupUserCode = 4002;
 
@@ -24,6 +29,13 @@ const tableHeadings = [
   "Feedback Type",
   "Feedback Name",
   "Feedback Description",
+  "Actions",
+];
+
+const tableGroupFeedbacks = [
+  "S.No.",
+  "Group Name",
+  "Feedback Parameters",
   "Actions",
 ];
 
@@ -47,4 +59,10 @@ export {
   deleteFeedbackFormCode,
   loginUserCode,
   signupUserCode,
+  tableGroupFeedbacks,
+  addGroupFeedbackCode,
+  getAllGroupFeedbackCode,
+  getSingleGroupFeedbackCode,
+  updateGroupFeedbackCode,
+  deleteGroupFeedbackCode,
 };
