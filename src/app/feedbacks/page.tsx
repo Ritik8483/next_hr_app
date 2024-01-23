@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, Switch, Typography } from "@mui/material";
+import {
+  Box,
+  Switch,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import SearchField from "@/components/resuseables/SearchField";
 import Buttons from "@/components/resuseables/Buttons";
 import { useDispatch } from "react-redux";
@@ -36,13 +42,21 @@ const Feedbacks = () => {
   const [openFeedbackGroupModal, setOpenFeedbackGroupModal] =
     useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [checked, setChecked] = useState(false);
   const [feedbackDetail, setFeedbackDetail] = useState({});
   const [feedbackGroupDetail, setFeedbackGroupDetail] = useState({});
   const [openAlertBox, setOpenAlertBox] = useState<any>({
     data: {},
     state: false,
   });
+  const [alignment, setAlignment] = useState("Feedbacks");
+
+  const handleChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newAlignment: string
+  ) => {
+    setSearchText("");
+    setAlignment(newAlignment);
+  };
 
   const debouncedValue = useDebounce(searchText, 500);
 
@@ -50,14 +64,14 @@ const Feedbacks = () => {
     url: "feedback-parameters",
     page: currentPage,
     limit: limit,
-    search: !checked && (debouncedValue || ""),
+    search: alignment === "Feedbacks" && (debouncedValue || ""),
   };
 
   const payloadFeedback = {
     url: "group-parameters",
     page: currentPage,
     limit: limit,
-    search: checked && (debouncedValue || ""),
+    search: alignment === "Group Feedbacks" && (debouncedValue || ""),
   };
   const { data, isLoading, error } = useGetAllFeedbackParametersQuery(payload);
 
@@ -140,12 +154,6 @@ const Feedbacks = () => {
     }
   };
 
-  const handleSwitchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setChecked(e.target.checked);
-    dispatch(setFeedbackSwitch(e.target.checked));
-    setSearchText("");
-  };
-
   return (
     <>
       <Box
@@ -173,13 +181,27 @@ const Feedbacks = () => {
         </Box>
       </Box>
 
-      <Box display="flex" alignItems="center" gap="5px" marginBottom="20px">
-        <Typography color={!checked ? "#1976D2" : "grey"}>Feedbacks</Typography>
-        <Switch checked={checked} onChange={handleSwitchChange} />
-        <Typography color={checked ? "#1976D2" : "grey"}>
+      <ToggleButtonGroup
+        color="primary"
+        value={alignment}
+        sx={{ marginBottom: "20px" }}
+        exclusive
+        onChange={handleChange}
+        aria-label="Platform"
+      >
+        <ToggleButton
+          sx={{ textTransform: "capitalize" }}
+          value="Feedbacks"
+        >
+          Feedbacks
+        </ToggleButton>
+        <ToggleButton
+          sx={{ textTransform: "capitalize" }}
+          value="Group Feedbacks"
+        >
           Group Feedbacks
-        </Typography>
-      </Box>
+        </ToggleButton>
+      </ToggleButtonGroup>
 
       {isLoading ? (
         <SkeletonTable
@@ -189,7 +211,7 @@ const Feedbacks = () => {
         />
       ) : !data?.data?.length ? (
         <NoDataFound text="No data Found" />
-      ) : data?.data?.length && !checked ? (
+      ) : data?.data?.length && alignment === "Feedbacks" ? (
         <FeedbackParameterTable
           data={data}
           currentPage={currentPage}
@@ -198,7 +220,7 @@ const Feedbacks = () => {
           handleEdit={handleEdit}
           setOpenAlertBox={setOpenAlertBox}
         />
-      ) : data?.data?.length && checked ? (
+      ) : data?.data?.length && alignment === "Group Feedbacks" ? (
         <GroupParametersTable
           data={feedbackGroupsData}
           currentPage={currentPage}
@@ -233,14 +255,16 @@ const Feedbacks = () => {
           cancelText="No Cancel"
           confirmText="Yes Delete"
           mainHeaderText={
-            checked
+            alignment === "Group Feedbacks"
               ? "Are you sure you want to delete this feedback group?"
               : "Are you sure you want to delete this feedback?"
           }
           // userName={openAlertBox.data.feedbackName}
           onClose={handleClose}
           handleClick={
-            checked ? handleDeleteGroupFeedback : handleDeleteFeedback
+            alignment === "Group Feedbacks"
+              ? handleDeleteGroupFeedback
+              : handleDeleteFeedback
           }
         />
       )}

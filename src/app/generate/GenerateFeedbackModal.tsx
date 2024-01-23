@@ -119,7 +119,7 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
 
   const payloadFeedback = {
     url: "group-parameters",
-    // search: ,
+    search: debouncedFeedbacks,
   };
 
   const feedbacksPayload = {
@@ -343,6 +343,11 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
     (it: any) => it._id
   );
   const reviewTeamIds = multipleReviewType?.map((it: any) => it._id);
+
+  const ttt = feedbackGroupsData?.data?.map((it: any) => {
+    const feedIds = it?.groupFeedbacks?.map((item: any) => item._id);
+    return feedIds;
+  });
 
   const handleSubmitClick = () => {
     if (
@@ -789,12 +794,20 @@ const GenerateFeedbackModal = (props: GenerateFeedbackInterface) => {
                         onClick={() => handleFeedbackChange(it)}
                       >
                         <Checkbox
-                          defaultChecked={feedIds?.every((ite: any) =>
-                            feedbackParaIds?.includes(ite)
-                          )}
-                          checked={feedIds?.every((ite: any) =>
-                            feedbackParaIds?.includes(ite)
-                          )}
+                          defaultChecked={
+                            feedbackFormDetail?._id
+                              ? feedIds?.every((ite: any) =>
+                                  feedbackParaIds?.includes(ite)
+                                )
+                              : feedbackParametersArray?.includes(it._id)
+                          }
+                          checked={
+                            feedbackFormDetail?._id
+                              ? feedIds?.every((ite: any) =>
+                                  feedbackParaIds?.includes(ite)
+                                )
+                              : feedbackParametersArray?.includes(it._id)
+                          }
                         />
                         <ListItemText primary={it.feedbackGroupName} />
                       </MenuItem>
