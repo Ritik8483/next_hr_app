@@ -202,7 +202,9 @@ const GenerateFeedback = () => {
               </TableHead>
               <TableBody>
                 {data?.data?.map((item: any, index: number) => {
-                  const date: any = String(new Date(item.date)).split("GMT")[0];
+                  const date: any = String(new Date(item.createdAt)).split(
+                    "GMT"
+                  )[0];
                   return (
                     <StyledTableRow
                       onClick={() => handleRowClick(item)}
