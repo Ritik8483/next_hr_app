@@ -5,7 +5,7 @@ import Buttons from "./Buttons";
 
 interface SimpleDialogProps {
   open: boolean;
-  onClose: (value: string) => void;
+  onClose: any;
   handleClick?: any;
   cancelText: string;
   confirmText: string;

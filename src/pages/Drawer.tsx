@@ -85,16 +85,30 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 export default function SidebarDrawer({ children }: any) {
+  console.log("CALLED");
+
+  let userToken: any;
   const theme = useTheme();
   const pathname: any = usePathname();
   const sidebarDrawerRef: any = useRef();
   const router: any = useRouter();
-  const dispatch = useDispatch();
-  const snackbar = useSelector((state: any) => state.snackbarSlice);
-  const sidebarOption = useSelector(
+  const dispatch: any = useDispatch<any>();
+  const snackbar: any = useSelector(
+    (state: any) =>
+      state.snackbarSlice || {
+        snackbarState: "",
+        snackbarType: "",
+        snackbarMessage: "",
+      }
+  );
+
+  console.log("snackbar",snackbar);
+  
+  const sidebarOption: any = useSelector(
     (state: any) => state.authSlice.sidebarOption
   );
-  const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
+
+  console.log("sidebarOption",sidebarOption);
 
   const [open, setOpen] = useState(false);
   const [option, setOption] = useState(sidebarOption || "Dashboard");
@@ -109,7 +123,8 @@ export default function SidebarDrawer({ children }: any) {
   };
 
   useEffect(() => {
-    if (!Object.keys(userToken).length && pathname !== "/") {
+    userToken = localStorage.getItem("userToken") || "";
+    if (!userToken && pathname !== "/") {
       redirect("/");
     }
   }, []);

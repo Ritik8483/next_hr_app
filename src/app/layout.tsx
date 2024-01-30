@@ -25,32 +25,29 @@ export default function RootLayout({
   const persistor = persistStore(store);
   const pathname: any = usePathname();
 
-  const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
+  // let userToken="hello";
+  let userToken: any;
 
   useEffect(() => {
-    if (
-      !Object.keys(userToken).length &&
-      pathname.split("/").includes("form")
-    ) {
-
+    userToken = localStorage.getItem("userToken") || "";
+    if (!userToken && pathname.split("/").includes("form")) {
       return;
     }
-    if (!Object.keys(userToken).length && pathname !== "/") {
-      alert("called");
+    if (!userToken && pathname !== "/") {
       redirect("/");
     }
   }, []);
+
+  console.log(userToken);
 
   return (
     <html lang="en">
       <body className={inter.className}>
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
-            {!Object.keys(userToken).length &&
-            pathname.split("/").includes("form") ? (
+            {!userToken && pathname.split("/").includes("form") ? (
               children
-            ) : (Object.keys(userToken).length && userToken) ||
-              (!Object.keys(userToken).length && pathname !== "/") ? (
+            ) : (userToken && userToken) || (!userToken && pathname !== "/") ? (
               <SidebarDrawer>{children}</SidebarDrawer>
             ) : (
               children

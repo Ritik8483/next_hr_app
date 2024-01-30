@@ -1,11 +1,3 @@
-// import Login from "./login/page";
-
-// export default function Home() {
-//   return <>
-//   <Login/>
-//   </>;
-// }
-
 "use client";
 
 import React, { useEffect } from "react";
@@ -18,7 +10,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import InputField from "@/components/resuseables/InputField";
 import { closeAlert, openAlert } from "@/redux/slices/snackBarSlice";
 import { loginSchema } from "@/schema/schema";
-import { AppDispatch } from "@/redux/store";
 import Buttons from "@/components/resuseables/Buttons";
 import { formContainer } from "@/styles/styles";
 import { IFormInput } from "@/interface/Interface";
@@ -40,7 +31,7 @@ const Login = () => {
   const pathname: any = usePathname();
   const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
   const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch();
 
   const [loginAdminUser] = useLoginAdminUserMutation();
 
