@@ -8,7 +8,7 @@ import { store } from "@/redux/store";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { useEffect } from "react";
-import SidebarDrawer from "@/pages/Drawer";
+import SidebarDrawer from "@/pagesFolder/Drawer";
 import { redirect, usePathname } from "next/navigation";
 const inter = Inter({ subsets: ["latin"] });
 

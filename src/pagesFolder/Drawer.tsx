@@ -85,33 +85,21 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 export default function SidebarDrawer({ children }: any) {
-  console.log("CALLED");
-
   let userToken: any;
   const theme = useTheme();
   const pathname: any = usePathname();
   const sidebarDrawerRef: any = useRef();
   const router: any = useRouter();
   const dispatch: any = useDispatch<any>();
-  const snackbar: any = useSelector(
-    (state: any) =>
-      state.snackbarSlice || {
-        snackbarState: "",
-        snackbarType: "",
-        snackbarMessage: "",
-      }
-  );
 
-  console.log("snackbar",snackbar);
-  
+  const snackbar: any = useSelector((state: any) => state.snackbarSlice);
+
   const sidebarOption: any = useSelector(
     (state: any) => state.authSlice.sidebarOption
   );
 
-  console.log("sidebarOption",sidebarOption);
-
   const [open, setOpen] = useState(false);
-  const [option, setOption] = useState(sidebarOption || "Dashboard");
+  const [option, setOption] = useState("Dashboard");
   const [openAlertBox, setOpenAlertBox] = useState<any>(false);
 
   const handleDrawerOpen = () => {
