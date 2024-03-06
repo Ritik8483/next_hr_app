@@ -111,11 +111,17 @@ const FillFeedbackForm = () => {
       refetchOnMountOrArgChange: true,
     });
 
+  console.log("data", data);
+  console.log("feedbackId",feedbackId.split("=")[1]);
+  
+
   const payloadUser = {
     url: "users",
     id: feedbackId.split("=")[1],
   };
   const { data: feedbackReviewer } = useGetSingleUserQuery(payloadUser);
+
+  console.log("feedbackReviewer", feedbackReviewer);
 
   const [updateFeedbackForm] = useUpdateFeedbackFormMutation();
   const [feedbackUser, setFeedbackUser] = useState<any>(
@@ -198,7 +204,7 @@ const FillFeedbackForm = () => {
             ]
           : data?.data?.reviewer
               ?.map((it: any) => {
-                if (it._id === feedbackReviewer?.data?._id) {
+                if (it._id === feedbackId.split("=")[1]) {
                   return {
                     ...it,
                     userProgress: [
@@ -334,6 +340,9 @@ const FillFeedbackForm = () => {
         })
         .filter((item: any) => item !== undefined);
 
+        console.log("reviewerETMArr",reviewerETMArr);
+        
+
     const reviewerSA =
       data?.data?.feedback_type === SA &&
       data?.data?.responses
@@ -355,7 +364,7 @@ const FillFeedbackForm = () => {
       (data?.data?.feedback_type === ETM && data?.data?.reviewer?.length === 1
         ? data?.data?.review?.length === data?.data?.responses?.length
         : reviewerETMArr?.some(
-            (item: any) => item?._id === feedbackReviewer?.data?._id
+            (item: any) => item?._id === feedbackId.split("=")[1]
           ));
 
     const responseSA =
@@ -373,6 +382,9 @@ const FillFeedbackForm = () => {
           window.location.search.split("user=")[1] === it._id &&
           data?.data?.people_reviewed?.includes(it._id)
       );
+
+      console.log("response",response);
+      
 
     if (resp || responseSA || response || finalRespAnonymous) {
       setActivePage(true);

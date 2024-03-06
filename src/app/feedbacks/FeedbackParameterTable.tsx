@@ -63,8 +63,8 @@ const FeedbackParameterTable = ({
                   {item.feedbackName}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {item?.mcqOption.length
-                    ? item?.mcqOption.map((it: string, index: number) => (
+                  {item?.mcqOption?.length
+                    ? item?.mcqOption?.map((it: string, index: number) => (
                         <Box key={it}>
                           <Typography>
                             {it === "" ? "" : index + 1 + "."}{" "}
