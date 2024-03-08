@@ -1,95 +1,128 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client";
 
-export default function Home() {
+import React, { useEffect } from "react";
+import { Box } from "@mui/material";
+import { useDispatch } from "react-redux";
+import Typography from "@mui/material/Typography";
+import { usePathname, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import InputField from "@/components/resuseables/InputField";
+import { closeAlert, openAlert } from "@/redux/slices/snackBarSlice";
+import { loginSchema } from "@/schema/schema";
+import Buttons from "@/components/resuseables/Buttons";
+import { formContainer } from "@/styles/styles";
+import { IFormInput } from "@/interface/Interface";
+import { useLoginAdminUserMutation } from "@/redux/api/api";
+import { storeLoginToken } from "@/redux/slices/authSlice";
+import { redirect } from "next/navigation";
+
+const Login = () => {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<any>({
+    resolver: yupResolver(loginSchema),
+  });
+
+  const router = useRouter();
+  const pathname: any = usePathname();
+  const userToken = JSON.parse(localStorage.getItem("userToken") || "{}");
+  const sidebarText = JSON.parse(localStorage.getItem("sidebarText") || "{}");
+  const dispatch = useDispatch();
+
+  const [loginAdminUser] = useLoginAdminUserMutation();
+
+  const handleSubmitForm = async (data: IFormInput) => {
+    if (data?.email === "ritik.chauhan@quokkalabs.com") {
+      try {
+        const payload = {
+          url: "auth/login",
+          body: data,
+        };
+        const resp = await loginAdminUser(payload).unwrap();
+        if (resp?.data?.token) {
+          dispatch(storeLoginToken(resp?.data?.token));
+          localStorage.setItem("sidebarText", JSON.stringify("Dashboard"));
+          localStorage.setItem("userToken", JSON.stringify(resp?.data?.token));
+          dispatch(
+            openAlert({
+              type: "success",
+              message: resp.message,
+            })
+          );
+          reset();
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        dispatch(
+          openAlert({
+            type: "error",
+            message: "Invalid login credentials",
+          })
+        );
+        console.log("error", error);
+      }
+    } else {
+      dispatch(
+        openAlert({
+          type: "error",
+          message: "Please enter correct user email address",
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (Object.keys(userToken).length && pathname === "/") {
+      redirect(sidebarText.toLowerCase());
+    } else if (Object.keys(userToken).length && pathname !== "/") {
+      redirect(pathname);
+    }
+  }, []);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <Box>
+          <Typography textAlign="center">QL Feedback App</Typography>
+          <form style={formContainer} onSubmit={handleSubmit(handleSubmitForm)}>
+            <Box display="flex" flexDirection="column" gap="20px">
+              <InputField
+                type="email"
+                register={register}
+                id="email"
+                name="email" //name is essentially required
+                placeholder="Email"
+                errorMessage={errors.email?.message}
+              />
+              <InputField
+                register={register}
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Password"
+                errorMessage={errors.password?.message}
+              />
+              <Buttons
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                text={isSubmitting ? "Login..." : "Login"}
+              />
+            </Box>
+          </form>
+        </Box>
+      </Box>
+    </>
+  );
+};
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
-}
+export default Login;
