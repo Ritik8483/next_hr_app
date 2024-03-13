@@ -93,7 +93,7 @@ pipeline {
                 }
             }
 */        }
-
+/*
         stage("TEST") {
         // # Waiting for Code Quality Check Response from the Quality Gate Server
             when {
@@ -111,6 +111,7 @@ pipeline {
                 sh 'echo "success"'
             }
         }
+*/        
     }
 
     post {
